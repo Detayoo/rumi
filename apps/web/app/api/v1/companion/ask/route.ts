@@ -14,6 +14,7 @@ import {
   ANON_QUOTA_MAX,
   isQuotaExhausted,
   nextQuota,
+  quotaPolicyFor,
   signQuota,
   utcDayKey,
   verifyQuota,
@@ -68,13 +69,16 @@ export async function POST(request: Request): Promise<NextResponse<Envelope<AiRe
   const { provider: requestedProvider, apiKey: clientApiKey, ...context } = parsed.data;
 
   const store = await cookies();
-  const currentQuota = verifyQuota(store.get(QUOTA_COOKIE)?.value);
-  if (isQuotaExhausted(currentQuota, day)) {
-    console.log(JSON.stringify({ event: 'ai_request', requestId, outcome: 'rate_limited', spoilerMode: context.spoilerBoundary.mode }));
+  const policy = quotaPolicyFor(requestedProvider, clientApiKey);
+
+  // byok requests are charged to the user's own key — the anonymous demo allowance does not apply
+  const currentQuota = policy === 'byok' ? null : verifyQuota(store.get(QUOTA_COOKIE)?.value);
+  if (policy === 'anon' && isQuotaExhausted(currentQuota, day)) {
+    console.log(JSON.stringify({ event: 'ai_request', requestId, outcome: 'rate_limited', quotaPolicy: policy, spoilerMode: context.spoilerBoundary.mode }));
     return errorEnvelope(
       429,
       'rate_limited',
-      `you've reached today's question limit (${ANON_QUOTA_MAX} anonymous questions per day). sign in to keep asking.`,
+      `you've reached today's question limit (${ANON_QUOTA_MAX} anonymous questions per day). add your own api key in provider settings to keep asking — your key is charged to your own account.`,
       requestId,
     );
   }
@@ -99,15 +103,17 @@ export async function POST(request: Request): Promise<NextResponse<Envelope<AiRe
       timeout,
     ]);
 
-    const updated = nextQuota(currentQuota, day);
+    const updated = policy === 'byok' ? null : nextQuota(currentQuota, day);
     const res = NextResponse.json({ data: response });
-    res.cookies.set(QUOTA_COOKIE, signQuota(updated), {
-      httpOnly: true,
-      sameSite: 'lax',
-      secure: process.env.NODE_ENV === 'production',
-      maxAge: 60 * 60 * 24,
-      path: '/',
-    });
+    if (updated !== null) {
+      res.cookies.set(QUOTA_COOKIE, signQuota(updated), {
+        httpOnly: true,
+        sameSite: 'lax',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 60 * 24,
+        path: '/',
+      });
+    }
 
     console.log(
       JSON.stringify({
@@ -116,8 +122,9 @@ export async function POST(request: Request): Promise<NextResponse<Envelope<AiRe
         outcome: 'ok',
         latencyMs: Date.now() - startedAt,
         model: ai.name,
+        quotaPolicy: policy,
         spoilerMode: context.spoilerBoundary.mode,
-        questionsUsed: updated.questions,
+        questionsUsed: updated?.questions,
       }),
     );
     return res;

@@ -67,3 +67,26 @@ export function nextQuota(current: AnonQuota | null, day: string = utcDayKey()):
 export function isQuotaExhausted(quota: AnonQuota | null, day: string = utcDayKey()): boolean {
   return quota !== null && quota.day === day && quota.questions >= ANON_QUOTA_MAX;
 }
+
+/**
+ * which quota policy applies to a request:
+ * - 'byok' — the user supplied their own key for a real vendor. they pay for the tokens,
+ *   so the product's anonymous demo allowance does not apply (§5 is about the free tier;
+ *   byok is the user's own credential).
+ * - 'anon' — demo engine (mock) or product-owned env key. the product pays here, so the
+ *   5/day anonymous cap applies.
+ */
+export function quotaPolicyFor(
+  requestedProvider: { vendor: string } | undefined,
+  clientApiKey: string | undefined,
+): 'byok' | 'anon' {
+  if (
+    requestedProvider !== undefined &&
+    requestedProvider.vendor !== 'mock' &&
+    clientApiKey !== undefined &&
+    clientApiKey !== ''
+  ) {
+    return 'byok';
+  }
+  return 'anon';
+}

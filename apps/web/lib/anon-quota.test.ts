@@ -3,6 +3,7 @@ import {
   ANON_QUOTA_MAX,
   isQuotaExhausted,
   nextQuota,
+  quotaPolicyFor,
   signQuota,
   utcDayKey,
   verifyQuota,
@@ -69,5 +70,22 @@ describe('anon quota — day rollover and exhaustion', () => {
   it('day key is a stable UTC date', () => {
     expect(utcDayKey(new Date('2026-08-07T23:59:59Z'))).toBe('2026-08-07');
     expect(utcDayKey(new Date('2026-08-08T00:00:00Z'))).toBe('2026-08-08');
+  });
+});
+
+describe('quotaPolicyFor — byok bypasses the anonymous allowance', () => {
+  it('a real vendor with the user\u2019s own key is byok (user pays — no cap)', () => {
+    expect(quotaPolicyFor({ vendor: 'deepseek' }, 'sk-user')).toBe('byok');
+    expect(quotaPolicyFor({ vendor: 'openai' }, 'sk-user')).toBe('byok');
+  });
+
+  it('the mock/demo engine is anon even with a key attached', () => {
+    expect(quotaPolicyFor({ vendor: 'mock' }, 'sk-whatever')).toBe('anon');
+    expect(quotaPolicyFor(undefined, undefined)).toBe('anon');
+  });
+
+  it('a real vendor without the user\u2019s key is anon (product would pay)', () => {
+    expect(quotaPolicyFor({ vendor: 'openai' }, undefined)).toBe('anon');
+    expect(quotaPolicyFor({ vendor: 'anthropic' }, '')).toBe('anon');
   });
 });
