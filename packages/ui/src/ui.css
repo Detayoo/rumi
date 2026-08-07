@@ -17,12 +17,7 @@
 }
 
 .sc-button {
-  transition:
-    background-color var(--duration-fast) var(--easing-standard),
-    transform var(--duration-fast) var(--easing-standard);
-}
-.sc-button:not(:disabled):active {
-  transform: scale(0.98);
+  transition: background-color var(--duration-fast) var(--easing-standard);
 }
 .sc-button:disabled {
   cursor: not-allowed;

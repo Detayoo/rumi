@@ -5,6 +5,9 @@ import { toCssVar, type ContentToken, type FontWeight, type TextSize } from '@sc
  * Text — Box's sibling, and the only place typography tokens are allowed (§3.4).
  * `size` picks the look, `as` picks the semantics: a card title can be
  * <Text as="h3" size="title-sm"> — visually small but a real heading.
+ *
+ * family follows size: display and title-lg render in the display family (PolySans Wide),
+ * everything else in the body family (PolySans) — one type vocabulary, two cuts.
  */
 
 export interface TextProps {
@@ -30,6 +33,8 @@ const HEADING_MAP: Partial<Record<TextSize, 'h1' | 'h2' | 'h3' | 'h4'>> = {
   'title-sm': 'h3',
 };
 
+const DISPLAY_SIZES: ReadonlySet<TextSize> = new Set(['display', 'title-lg']);
+
 export function Text(props: TextProps): ReactNode {
   const {
     size = 'body-md',
@@ -48,6 +53,7 @@ export function Text(props: TextProps): ReactNode {
   const Tag = as ?? HEADING_MAP[size] ?? 'span';
 
   const styleMap: CSSProperties = {
+    fontFamily: DISPLAY_SIZES.has(size) ? 'var(--font-family-display)' : 'var(--font-family-body)',
     fontSize: toCssVar(`text.${size}`),
     lineHeight: toCssVar(`leading.${size}`),
     fontWeight: toCssVar(`weight.${weight}`),

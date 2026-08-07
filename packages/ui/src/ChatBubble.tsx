@@ -1,16 +1,21 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import { Box } from './Box';
 import { Text } from './Text';
-import { Stack } from './Stack';
 import { Prose } from './Prose';
 import { SpoilerBadge } from './SpoilerBadge';
 import { Chip } from './Chip';
+import { MotionBox, useReducedMotion } from './motion-box';
+import { fadeUp, fadeOnly } from './motion-presets';
 import type { SpoilerMode } from '@screen-companion/ai-contracts';
 import type { BackgroundToken } from '@screen-companion/design-tokens';
 
 /**
  * ChatBubble — composes Box (bubble shape, role-based fill) + Prose (message content,
  * sanitized) + SpoilerBadge when the answer contains spoilers + follow-up chips (§6.7).
+ * enters with a short rise so a new message doesn't teleport in (§2.6, preventing
+ * jarring changes); reduced motion falls back to opacity-only.
  */
 export interface ChatBubbleProps {
   role: 'user' | 'assistant';
@@ -33,9 +38,20 @@ const ROLE_TEXT: Record<'user' | 'assistant', 'content.inverse' | 'content.prima
 
 export function ChatBubble(props: ChatBubbleProps): ReactNode {
   const { role, content, spoilerMode, followUpQuestions = [], onFollowUpPress } = props;
+  const reduce = useReducedMotion();
+  const entrance = reduce ? fadeOnly() : fadeUp(6);
 
   return (
-    <Stack gap="s" width="100%" align={role === 'user' ? 'end' : 'start'}>
+    <MotionBox
+      initial="initial"
+      animate="enter"
+      variants={entrance}
+      display="flex"
+      direction="column"
+      gap="s"
+      width="100%"
+      align={role === 'user' ? 'end' : 'start'}
+    >
       <Box
         radius="m"
         padding="m"
@@ -66,6 +82,6 @@ export function ChatBubble(props: ChatBubbleProps): ReactNode {
           ))}
         </Box>
       )}
-    </Stack>
+    </MotionBox>
   );
 }

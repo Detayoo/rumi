@@ -1,11 +1,14 @@
+'use client';
+
 import type { ReactNode } from 'react';
-import { Box } from './Box';
+import { MotionBox, useReducedMotion } from './motion-box';
+import { pressSpring } from './motion-presets';
 import { Text } from './Text';
-import { Inline } from './Inline';
 
 /**
  * Button — real behavior (press state, disabled, loading spinner swap, keyboard activation)
  * on top of a styled Box: radius='s', padding scaled to size, action.primary fill (§6.1).
+ * press feedback is a spring scale via motion — instant, interruptible, no bounce.
  */
 
 export interface ButtonProps {
@@ -26,6 +29,7 @@ const PADDING: Record<'s' | 'm' | 'l', { y: '2xs' | 'xs' | 's'; x: 'm' | 'l' | '
 
 export function Button(props: ButtonProps): ReactNode {
   const { variant = 'primary', size = 'm', onPress, disabled = false, loading = false, children, type = 'button' } = props;
+  const reduce = useReducedMotion();
 
   const primary = variant === 'primary';
   const background = disabled
@@ -40,7 +44,7 @@ export function Button(props: ButtonProps): ReactNode {
       : 'content.primary';
 
   return (
-    <Box
+    <MotionBox
       as="button"
       type={type}
       focusable={!disabled}
@@ -58,11 +62,13 @@ export function Button(props: ButtonProps): ReactNode {
       justify="center"
       gap="2xs"
       aria-busy={loading || undefined}
+      whileTap={!disabled && !loading && !reduce ? { transform: 'scale(0.97)' } : undefined}
+      transition={pressSpring}
     >
       {loading && <span className="sc-spinner" aria-hidden="true" />}
-      <Text size={size === 'l' ? 'body-lg' : 'body-md'} weight="medium" color={color}>
+      <Text size={size === 'l' ? 'body-lg' : 'body-md'} weight="semibold" color={color}>
         {children}
       </Text>
-    </Box>
+    </MotionBox>
   );
 }

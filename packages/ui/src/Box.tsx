@@ -1,4 +1,4 @@
-import type { ChangeEventHandler, CSSProperties, FormEvent, KeyboardEvent, ReactNode } from 'react';
+import type { ChangeEventHandler, CSSProperties, FormEvent, KeyboardEvent, ReactNode, Ref } from 'react';
 import {
   toCssVar,
   type BackgroundToken,
@@ -55,6 +55,7 @@ export interface BoxProps {
   onPress?: () => void;
 
   // native escape hatches (form elements, semantics)
+  ref?: Ref<HTMLElement>;
   as?: 'div' | 'button' | 'a' | 'section' | 'article' | 'header' | 'footer' | 'nav' | 'main' | 'form' | 'label' | 'ul' | 'li' | 'span' | 'input';
   children?: ReactNode;
   className?: string;

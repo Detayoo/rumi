@@ -14,7 +14,8 @@
   },
   "dependencies": {
     "@screen-companion/ai-contracts": "workspace:*",
-    "@screen-companion/design-tokens": "workspace:*"
+    "@screen-companion/design-tokens": "workspace:*",
+    "motion": "^13.0.0"
   },
   "peerDependencies": {
     "react": "^19.0.0",

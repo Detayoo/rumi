@@ -37,7 +37,7 @@ export function TextInput(props: TextInputProps): ReactNode {
   return (
     <Stack gap="2xs" width="100%">
       {label !== undefined && (
-        <Text as="label" size="body-sm" weight="medium" htmlFor={inputId} color="content.secondary">
+        <Text as="label" size="body-sm" weight="semibold" htmlFor={inputId} color="content.secondary">
           {label}
         </Text>
       )}

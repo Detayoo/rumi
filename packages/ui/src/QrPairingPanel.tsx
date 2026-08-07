@@ -1,14 +1,19 @@
+'use client';
+
 import type { ReactNode } from 'react';
 import { Box } from './Box';
 import { Text } from './Text';
 import { Stack } from './Stack';
 import { Button } from './Button';
+import { MotionBox, useReducedMotion } from './motion-box';
+import { scaleIn, fadeOnly } from './motion-presets';
 
 /**
  * QrPairingPanel — full-screen pairing surface (design-system.md §6.8, req §10).
  * radius='l', surface.raised, generous padding since it's typically shown full-screen on tv.
  * the qr image is rendered from a provider-supplied url (generated server-side in phase 5);
  * the cancel action is a Button (focus-row equivalent on browser).
+ * enters like a modal — centered scale, exempt from trigger-anchored origin (emil-design-eng).
  */
 export interface QrPairingPanelProps {
   qrCodeUrl?: string | null;
@@ -20,9 +25,23 @@ export interface QrPairingPanelProps {
 
 export function QrPairingPanel(props: QrPairingPanelProps): ReactNode {
   const { qrCodeUrl, title = 'Pair your TV', subtitle = 'Scan this code with your phone to connect', cancelLabel = 'Cancel pairing', onCancel } = props;
+  const reduce = useReducedMotion();
+  const entrance = reduce ? fadeOnly() : scaleIn;
 
   return (
-    <Box radius="l" background="surface.raised" padding="xl" border="border.subtle" borderWidth="thin" maxWidth={480} width="100%">
+    <MotionBox
+      initial="initial"
+      animate="enter"
+      variants={entrance}
+      radius="l"
+      background="surface.raised"
+      padding="xl"
+      border="border.subtle"
+      borderWidth="thin"
+      maxWidth={480}
+      width="100%"
+      shadow="high"
+    >
       <Stack gap="l" align="center">
         <Stack gap="xs" align="center">
           <Text as="h1" size="title-lg" weight="bold" align="center">
@@ -49,6 +68,6 @@ export function QrPairingPanel(props: QrPairingPanelProps): ReactNode {
           </Button>
         )}
       </Stack>
-    </Box>
+    </MotionBox>
   );
 }

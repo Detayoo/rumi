@@ -12,3 +12,5 @@ export * from './FocusRow';
 export * from './Prose';
 export * from './ChatBubble';
 export * from './QrPairingPanel';
+export * from './motion-presets';
+export * from './motion-box';
