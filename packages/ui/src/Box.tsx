@@ -152,9 +152,6 @@ export function Box(props: BoxProps): ReactNode {
     justifyContent: justify === undefined ? undefined : mapJustify(justify),
     flexWrap: wrap ? 'wrap' : undefined,
     gap: gap === undefined ? undefined : gap === 'none' ? '0px' : toCssVar(`spacing.${gap}`),
-    padding: padding === undefined ? undefined : padding === 'none' ? '0px' : toCssVar(`spacing.${padding}`),
-    paddingLeft: paddingX === undefined ? undefined : paddingX === 'none' ? '0px' : toCssVar(`spacing.${paddingX}`),
-    paddingRight: paddingX === undefined ? undefined : paddingX === 'none' ? '0px' : toCssVar(`spacing.${paddingX}`),
     width,
     height,
     minWidth,
@@ -167,16 +164,33 @@ export function Box(props: BoxProps): ReactNode {
     boxShadow: shadow === undefined ? undefined : toCssVar(`shadow.${shadow}`),
   };
 
-  if (paddingY !== undefined) {
-    styleMap.paddingTop = paddingY === 'none' ? '0px' : toCssVar(`spacing.${paddingY}`);
-    styleMap.paddingBottom = paddingY === 'none' ? '0px' : toCssVar(`spacing.${paddingY}`);
+  // padding is always emitted as longhands, never the `padding` shorthand: motion's style
+  // pipeline mangles the shorthand (renders empty values), so every side must be explicit.
+  // precedence: padding < paddingX/paddingY < paddingTop/paddingBottom.
+  const padValue = (token: SpacingToken | undefined): string | undefined =>
+    token === undefined ? undefined : token === 'none' ? '0px' : toCssVar(`spacing.${token}`);
+
+  const all = padValue(padding);
+  if (all !== undefined) {
+    styleMap.paddingTop = all;
+    styleMap.paddingRight = all;
+    styleMap.paddingBottom = all;
+    styleMap.paddingLeft = all;
   }
-  if (paddingTop !== undefined) {
-    styleMap.paddingTop = paddingTop === 'none' ? '0px' : toCssVar(`spacing.${paddingTop}`);
+  const x = padValue(paddingX);
+  if (x !== undefined) {
+    styleMap.paddingLeft = x;
+    styleMap.paddingRight = x;
   }
-  if (paddingBottom !== undefined) {
-    styleMap.paddingBottom = paddingBottom === 'none' ? '0px' : toCssVar(`spacing.${paddingBottom}`);
+  const y = padValue(paddingY);
+  if (y !== undefined) {
+    styleMap.paddingTop = y;
+    styleMap.paddingBottom = y;
   }
+  const top = padValue(paddingTop);
+  if (top !== undefined) styleMap.paddingTop = top;
+  const bottom = padValue(paddingBottom);
+  if (bottom !== undefined) styleMap.paddingBottom = bottom;
 
   const classes = [
     focusable ? 'sc-focusable' : undefined,

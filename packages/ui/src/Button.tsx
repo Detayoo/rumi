@@ -2,7 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { MotionBox, useReducedMotion } from './motion-box';
-import { pressSpring } from './motion-presets';
+import { pressTransition } from './motion-presets';
 import { Text } from './Text';
 
 /**
@@ -62,8 +62,8 @@ export function Button(props: ButtonProps): ReactNode {
       justify="center"
       gap="2xs"
       aria-busy={loading || undefined}
-      whileTap={!disabled && !loading && !reduce ? { transform: 'scale(0.97)' } : undefined}
-      transition={pressSpring}
+      whileTap={!disabled && !loading && !reduce ? { transform: 'scale(0.98)' } : undefined}
+      transition={pressTransition}
     >
       {loading && <span className="sc-spinner" aria-hidden="true" />}
       <Text size={size === 'l' ? 'body-lg' : 'body-md'} weight="semibold" color={color}>

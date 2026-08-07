@@ -30,11 +30,14 @@ export const slowEnterTransition: Transition = {
   ease: easeDecelerate,
 };
 
-/** press feedback — a spring without bounce: decisive, not playful */
-export const pressSpring: Transition = {
-  type: 'spring',
-  duration: 0.35,
-  bounce: 0,
+/**
+ * press feedback — a fast, snappy scale. no spring, no bounce: 120ms with the standard
+ * curve reads as instant on press and instant on release. movement on high-frequency
+ * interactions must stay near-imperceptible (emil-design-eng).
+ */
+export const pressTransition: Transition = {
+  duration: 0.12,
+  ease: easeStandard,
 };
 
 /**

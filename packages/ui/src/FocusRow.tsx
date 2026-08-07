@@ -1,23 +1,22 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { MotionBox, useReducedMotion } from './motion-box';
-import { pressSpring } from './motion-presets';
+import { MotionBox } from './motion-box';
 import type { BoxProps } from './Box';
 
 /**
  * FocusRow — the tv-primary interactive row (§6.5), also used in browser list views for
  * consistency: a focusable Box row for search results, episode lists and settings rows.
  * this is the component responsible for making remote-control navigation work (req §11).
- * press feedback is a spring scale via motion (same contract as Button).
+ *
+ * no press-scale on purpose: rows navigate, and movement on a high-frequency interaction
+ * reads as noise (emil-design-eng). the focus ring is the feedback.
  */
 export interface FocusRowProps extends BoxProps {
   children: ReactNode;
 }
 
 export function FocusRow({ children, ...rest }: FocusRowProps): ReactNode {
-  const reduce = useReducedMotion();
-
   return (
     <MotionBox
       {...rest}
@@ -29,8 +28,6 @@ export function FocusRow({ children, ...rest }: FocusRowProps): ReactNode {
       direction="row"
       align="center"
       gap="m"
-      whileTap={!reduce ? { transform: 'scale(0.98)' } : undefined}
-      transition={pressSpring}
     >
       {children}
     </MotionBox>

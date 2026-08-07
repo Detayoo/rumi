@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Box, Text, MotionBox, pressSpring, useReducedMotion } from '@screen-companion/ui';
+import { Box, Text, MotionBox, pressTransition, useReducedMotion } from '@screen-companion/ui';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
@@ -34,8 +34,8 @@ export function ThemeToggle() {
       border="border.subtle"
       borderWidth="thin"
       aria-label={`switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
-      whileTap={!reduce ? { transform: 'scale(0.95)' } : undefined}
-      transition={pressSpring}
+      whileTap={!reduce ? { transform: 'scale(0.96)' } : undefined}
+      transition={pressTransition}
     >
       <Text size="caption" color="content.secondary">
         {theme === 'dark' ? 'light mode' : 'dark mode'}
