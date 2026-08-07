@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiClient, ApiError, askQuestion } from '@screen-companion/api-client';
-import { Box, Button, Card, ChatBubble, Chip, SpoilerBadge, Stack, Text, TextInput } from '@screen-companion/ui';
+import { Box, Button, Card, ChatBubble, Chip, SpoilerBadge, Stack, Text, TextInput, useReducedMotion } from '@screen-companion/ui';
 import { conversationKey, loadConversation, saveConversation, type ConversationMessage } from '@/lib/conversation';
 import { loadAiSettings } from '@/lib/ai-settings';
 import type { SpoilerMode } from '@screen-companion/ai-contracts';
@@ -61,6 +61,7 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   const [providerLabel, setProviderLabel] = useState<string | null>(null);
   const lastQuestion = useRef<string>('');
   const endRef = useRef<HTMLDivElement>(null);
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     const settings = loadAiSettings();
@@ -72,8 +73,16 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   }, [boundary, messages, storageKey]);
 
   useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
-  }, [messages, pending]);
+    const end = endRef.current;
+    if (end === null) return;
+    const scroll = () => end.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' });
+    // first pass right after paint…
+    scroll();
+    // …then again once layout has fully settled (entrance animations and font loads can
+    // shift the page height after the first pass) — a single early call often lands short.
+    const settle = setTimeout(scroll, 150);
+    return () => clearTimeout(settle);
+  }, [messages, pending, reduce]);
 
   const changeBoundary = (next: SpoilerMode) => {
     if (next === boundary) return;
