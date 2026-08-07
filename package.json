@@ -1,0 +1,18 @@
+{
+  "name": "screen-companion",
+  "private": true,
+  "version": "0.1.0",
+  "description": "Spoiler-aware AI companion for movies and TV. See docs/product-requirements.md.",
+  "scripts": {
+    "dev": "pnpm --filter @screen-companion/web dev",
+    "build": "pnpm -r build",
+    "typecheck": "pnpm -r typecheck",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "devDependencies": {
+    "typescript": "^5.5.4",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@11.9.0"
+}
