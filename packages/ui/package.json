@@ -13,6 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@screen-companion/ai-contracts": "workspace:*",
     "@screen-companion/design-tokens": "workspace:*"
   },
   "peerDependencies": {

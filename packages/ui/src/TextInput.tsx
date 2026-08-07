@@ -64,7 +64,7 @@ export function TextInput(props: TextInputProps): ReactNode {
         }}
         aria-invalid={error !== undefined ? true : undefined}
         aria-describedby={error !== undefined ? `${inputId}-error` : undefined}
-        onChange={(event: { target: { value: string } }) => onChange(event.target.value)}
+        onChange={(event: React.ChangeEvent<HTMLInputElement>) => onChange(event.target.value)}
       />
       {error !== undefined && (
         <Text id={`${inputId}-error`} size="caption" color="feedback.danger">

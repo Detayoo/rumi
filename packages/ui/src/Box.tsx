@@ -1,4 +1,4 @@
-import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
+import type { ChangeEventHandler, CSSProperties, FormEvent, KeyboardEvent, ReactNode } from 'react';
 import {
   toCssVar,
   type BackgroundToken,
@@ -41,7 +41,8 @@ export interface BoxProps {
   // appearance
   background?: BackgroundToken;
   radius?: RadiusToken;
-  border?: BorderToken;
+  /** border.color tokens plus feedback.danger for error states (a semantic extension of the scale, per §1.2) */
+  border?: BorderToken | 'feedback.danger';
   borderWidth?: 'none' | 'thin' | 'thick';
   shadow?: ElevationToken;
 
@@ -73,7 +74,8 @@ export interface BoxProps {
   autoFocus?: boolean;
   htmlFor?: string;
   href?: string;
-  onChange?: (event: { target: { value: string } }) => void;
+  onChange?: ChangeEventHandler<HTMLInputElement>;
+  onSubmit?: (event: FormEvent<HTMLFormElement>) => void;
   onFocus?: () => void;
   onBlur?: () => void;
 }
@@ -84,9 +86,6 @@ function mapAlign(value: BoxProps['align']): CSSProperties['alignItems'] {
       return 'flex-start';
     case 'end':
       return 'flex-end';
-    case 'between':
-    case 'around':
-      return undefined;
     default:
       return value;
   }
@@ -195,8 +194,10 @@ export function Box(props: BoxProps): ReactNode {
   };
 
   return (
+    // rest is intentionally loosely spread: Box is a pass-through primitive and the
+    // as-prop union spans button/input/form semantics that TS can't fully reconcile.
     <Tag
-      {...rest}
+      {...(rest as Record<string, unknown>)}
       className={classes || undefined}
       style={{ ...styleMap, ...style }}
       tabIndex={focusable && Tag !== 'button' && Tag !== 'input' ? 0 : undefined}

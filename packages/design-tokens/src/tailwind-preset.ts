@@ -49,7 +49,10 @@ export const tailwindPreset = {
       fontSize: Object.fromEntries(
         textSizes.map((t) => [
           t,
-          [`var(${cssVarName(`text-${t}`)})`, `var(${cssVarName(`leading-${t}`)})`],
+          [`var(${cssVarName(`text-${t}`)})`, `var(${cssVarName(`leading-${t}`)})`] as [
+            string,
+            string,
+          ],
         ]),
       ),
       fontWeight: Object.fromEntries(
@@ -69,6 +72,6 @@ export const tailwindPreset = {
       },
     },
   },
-} satisfies Config;
+} satisfies Omit<Config, 'content' | 'presets' | 'corePlugins' | 'plugins'>;
 
 export default tailwindPreset;
