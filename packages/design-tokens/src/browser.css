@@ -1,0 +1,142 @@
+/*
+ * design tokens — browser values.
+ * Same token names as tv.css, different values (browser is viewed from ~40–60cm).
+ * Theme switching is a single attribute: data-theme="dark" on the root.
+ */
+
+:root,
+[data-theme='light'] {
+  /* spacing */
+  --spacing-none: 0px;
+  --spacing-3xs: 2px;
+  --spacing-2xs: 4px;
+  --spacing-xs: 8px;
+  --spacing-s: 12px;
+  --spacing-m: 16px;
+  --spacing-l: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+  --spacing-3xl: 64px;
+
+  /* radius */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* surface */
+  --surface-base: #fafafa;
+  --surface-raised: #ffffff;
+  --surface-overlay: #ffffff;
+  --surface-sunken: #f4f4f5;
+
+  /* content */
+  --content-primary: #18181b;
+  --content-secondary: #52525b;
+  --content-tertiary: #a1a1aa;
+  --content-inverse: #ffffff;
+  --content-link: #3f3f46;
+
+  /* border */
+  --border-subtle: #e4e4e7;
+  --border-default: #d4d4d8;
+  --border-strong: #a1a1aa;
+  --border-focus: #18181b;
+
+  /* action */
+  --action-primary-default: #18181b;
+  --action-primary-hover: #27272a;
+  --action-primary-pressed: #3f3f46;
+  --action-primary-disabled: #e4e4e7;
+  --action-secondary-default: #ffffff;
+  --action-secondary-hover: #f4f4f5;
+
+  /* feedback */
+  --feedback-success: #15803d;
+  --feedback-warning: #b45309;
+  --feedback-danger: #b91c1c;
+  --feedback-info: #0369a1;
+
+  /* spoiler (product-specific semantic layer) */
+  --spoiler-safe: rgba(16, 185, 129, 0.14);
+  --spoiler-caution: rgba(217, 119, 6, 0.14);
+  --spoiler-full: rgba(220, 38, 38, 0.12);
+
+  /* typography — size / line-height */
+  --text-display: 32px;
+  --leading-display: 40px;
+  --text-title-lg: 24px;
+  --leading-title-lg: 32px;
+  --text-title-md: 20px;
+  --leading-title-md: 28px;
+  --text-title-sm: 16px;
+  --leading-title-sm: 24px;
+  --text-body-lg: 17px;
+  --leading-body-lg: 26px;
+  --text-body-md: 15px;
+  --leading-body-md: 22px;
+  --text-body-sm: 13px;
+  --leading-body-sm: 18px;
+  --text-caption: 12px;
+  --leading-caption: 16px;
+
+  /* weight */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-bold: 700;
+
+  /* elevation */
+  --shadow-none: none;
+  --shadow-low: 0 1px 2px rgba(0, 0, 0, 0.06), 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  --shadow-high: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+
+  /* motion */
+  --duration-fast: 100ms;
+  --duration-default: 200ms;
+  --duration-slow: 320ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0, 1);
+}
+
+[data-theme='dark'] {
+  --surface-base: #0c0c0d;
+  --surface-raised: #17171a;
+  --surface-overlay: #1c1c1f;
+  --surface-sunken: #101012;
+
+  --content-primary: #fafafa;
+  --content-secondary: #a1a1aa;
+  --content-tertiary: #71717a;
+  --content-inverse: #0c0c0d;
+  --content-link: #d4d4d8;
+
+  --border-subtle: #26262b;
+  --border-default: #33333a;
+  --border-strong: #52525b;
+  --border-focus: #fafafa;
+
+  --action-primary-default: #fafafa;
+  --action-primary-hover: #d4d4d8;
+  --action-primary-pressed: #a1a1aa;
+  --action-primary-disabled: #26262b;
+  --action-secondary-default: #17171a;
+  --action-secondary-hover: #1c1c1f;
+
+  --feedback-success: #4ade80;
+  --feedback-warning: #fbbf24;
+  --feedback-danger: #f87171;
+  --feedback-info: #38bdf8;
+
+  --spoiler-safe: rgba(16, 185, 129, 0.18);
+  --spoiler-caution: rgba(251, 191, 36, 0.16);
+  --spoiler-full: rgba(248, 113, 113, 0.16);
+
+  --shadow-none: none;
+  --shadow-low: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 3px rgba(0, 0, 0, 0.5);
+  --shadow-medium: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-high: 0 20px 25px -5px rgba(0, 0, 0, 0.6), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+}

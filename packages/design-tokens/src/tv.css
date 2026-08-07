@@ -1,0 +1,143 @@
+/*
+ * design tokens — tv values (lg webos).
+ * Same token *names* as browser.css, larger values (viewed from ~2–3m).
+ * Per design-system.md §2.5: no shadows on tv — use border + background shift instead.
+ * Per §2.6: tv motion is reduced — fast, subtle focus transitions only.
+ */
+
+:root,
+[data-theme='light'] {
+  /* spacing — ~1.5x browser */
+  --spacing-none: 0px;
+  --spacing-3xs: 4px;
+  --spacing-2xs: 8px;
+  --spacing-xs: 12px;
+  --spacing-s: 16px;
+  --spacing-m: 24px;
+  --spacing-l: 32px;
+  --spacing-xl: 48px;
+  --spacing-2xl: 64px;
+  --spacing-3xl: 96px;
+
+  /* radius — same scale as browser, large radii read fine on a tv */
+  --radius-none: 0px;
+  --radius-xs: 4px;
+  --radius-s: 8px;
+  --radius-m: 12px;
+  --radius-l: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* surface */
+  --surface-base: #141416;
+  --surface-raised: #1d1d21;
+  --surface-overlay: #242429;
+  --surface-sunken: #101012;
+
+  /* content */
+  --content-primary: #f5f5f6;
+  --content-secondary: #a3a3ad;
+  --content-tertiary: #71717a;
+  --content-inverse: #141416;
+  --content-link: #d4d4d8;
+
+  /* border */
+  --border-subtle: #2a2a30;
+  --border-default: #3a3a42;
+  --border-strong: #63636e;
+  --border-focus: #f5f5f6;
+
+  /* action */
+  --action-primary-default: #f5f5f6;
+  --action-primary-hover: #d4d4d8;
+  --action-primary-pressed: #a1a1aa;
+  --action-primary-disabled: #2a2a30;
+  --action-secondary-default: #1d1d21;
+  --action-secondary-hover: #242429;
+
+  /* feedback */
+  --feedback-success: #4ade80;
+  --feedback-warning: #fbbf24;
+  --feedback-danger: #f87171;
+  --feedback-info: #38bdf8;
+
+  /* spoiler */
+  --spoiler-safe: rgba(16, 185, 129, 0.2);
+  --spoiler-caution: rgba(251, 191, 36, 0.18);
+  --spoiler-full: rgba(248, 113, 113, 0.18);
+
+  /* typography */
+  --text-display: 56px;
+  --leading-display: 64px;
+  --text-title-lg: 40px;
+  --leading-title-lg: 48px;
+  --text-title-md: 32px;
+  --leading-title-md: 40px;
+  --text-title-sm: 26px;
+  --leading-title-sm: 32px;
+  --text-body-lg: 28px;
+  --leading-body-lg: 36px;
+  --text-body-md: 24px;
+  --leading-body-md: 32px;
+  --text-body-sm: 20px;
+  --leading-body-sm: 28px;
+  --text-caption: 18px;
+  --leading-caption: 24px;
+
+  /* weight */
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-bold: 700;
+
+  /* elevation — all flat on tv, per §2.5 */
+  --shadow-none: none;
+  --shadow-low: none;
+  --shadow-medium: none;
+  --shadow-high: none;
+
+  /* motion — reduced */
+  --duration-fast: 100ms;
+  --duration-default: 150ms;
+  --duration-slow: 200ms;
+  --easing-standard: cubic-bezier(0.2, 0, 0, 1);
+  --easing-decelerate: cubic-bezier(0, 0, 0, 1);
+}
+
+[data-theme='dark'] {
+  --surface-base: #101012;
+  --surface-raised: #18181b;
+  --surface-overlay: #1e1e22;
+  --surface-sunken: #0c0c0d;
+
+  --content-primary: #f5f5f6;
+  --content-secondary: #a3a3ad;
+  --content-tertiary: #6f6f78;
+  --content-inverse: #101012;
+  --content-link: #d4d4d8;
+
+  --border-subtle: #26262c;
+  --border-default: #34343b;
+  --border-strong: #5b5b66;
+  --border-focus: #f5f5f6;
+
+  --action-primary-default: #f5f5f6;
+  --action-primary-hover: #d4d4d8;
+  --action-primary-pressed: #a1a1aa;
+  --action-primary-disabled: #26262c;
+  --action-secondary-default: #18181b;
+  --action-secondary-hover: #1e1e22;
+
+  --feedback-success: #4ade80;
+  --feedback-warning: #fbbf24;
+  --feedback-danger: #f87171;
+  --feedback-info: #38bdf8;
+
+  --spoiler-safe: rgba(16, 185, 129, 0.2);
+  --spoiler-caution: rgba(251, 191, 36, 0.18);
+  --spoiler-full: rgba(248, 113, 113, 0.18);
+
+  --shadow-none: none;
+  --shadow-low: none;
+  --shadow-medium: none;
+  --shadow-high: none;
+}
