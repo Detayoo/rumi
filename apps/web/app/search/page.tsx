@@ -2,7 +2,7 @@
 
 import { useCallback, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Box, Button, Card, FocusRow, Stack, Text, TextInput } from '@screen-companion/ui';
+import { Box, Button, Card, FocusRow, MotionBox, Stack, Text, TextInput, fadeOnly, fadeUp, staggerContainer, useReducedMotion } from '@screen-companion/ui';
 import type { TitleSummary } from '@screen-companion/types';
 import { MockMetadataProvider } from '@screen-companion/provider-adapters';
 
@@ -10,6 +10,8 @@ import { MockMetadataProvider } from '@screen-companion/provider-adapters';
  * search screen (phase 1 shell) — queries the in-memory mock metadata provider directly.
  * phase 2 swaps this for the real /api/v1/titles/search endpoint via ApiClient.
  * loading / empty / error states are first-class, per requirements.md §6.
+ * results stagger in (50ms apart) — results appear on demand, so a short cascade reads
+ * as spatial consistency, not decoration; reduced motion: opacity only.
  */
 
 type SearchState = 'idle' | 'loading' | 'success' | 'error';
@@ -23,6 +25,8 @@ export default function SearchPage() {
   const [selected, setSelected] = useState<TitleSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const requestSeq = useRef(0);
+  const reduce = useReducedMotion();
+  const item = reduce ? fadeOnly() : fadeUp(6);
 
   const runSearch = useCallback(async (q: string) => {
     const trimmed = q.trim();
@@ -80,79 +84,97 @@ export default function SearchPage() {
         </Box>
 
         {state === 'loading' && (
-          <Card padding="l">
-            <Text size="body-md" color="content.secondary">
-              Searching…
-            </Text>
-          </Card>
+          <MotionBox initial="initial" animate="enter" variants={item}>
+            <Card padding="l">
+              <Text size="body-md" color="content.secondary">
+                Searching…
+              </Text>
+            </Card>
+          </MotionBox>
         )}
 
         {state === 'error' && (
-          <Card padding="l" border="feedback.danger">
-            <Stack gap="s">
-              <Text size="body-md" color="feedback.danger">
-                {error}
-              </Text>
-              <Button variant="secondary" size="s" onPress={() => void runSearch(query)}>
-                Try again
-              </Button>
-            </Stack>
-          </Card>
+          <MotionBox initial="initial" animate="enter" variants={item}>
+            <Card padding="l" border="feedback.danger">
+              <Stack gap="s">
+                <Text size="body-md" color="feedback.danger">
+                  {error}
+                </Text>
+                <Button variant="secondary" size="s" onPress={() => void runSearch(query)}>
+                  Try again
+                </Button>
+              </Stack>
+            </Card>
+          </MotionBox>
         )}
 
         {state === 'success' && results.length === 0 && (
-          <Card padding="l">
-            <Stack gap="xs" align="center">
-              <Text as="h2" size="title-sm" weight="medium">
-                No titles found
-              </Text>
-              <Text size="body-sm" color="content.secondary">
-                Nothing matched “{query}”. Try a different title, or check the spelling.
-              </Text>
-            </Stack>
-          </Card>
+          <MotionBox initial="initial" animate="enter" variants={item}>
+            <Card padding="l">
+              <Stack gap="xs" align="center">
+                <Text as="h2" size="title-sm" weight="semibold">
+                  No titles found
+                </Text>
+                <Text size="body-sm" color="content.secondary">
+                  Nothing matched “{query}”. Try a different title, or check the spelling.
+                </Text>
+              </Stack>
+            </Card>
+          </MotionBox>
         )}
 
         {state === 'success' && results.length > 0 && (
-          <Stack gap="xs" role="list" aria-label="search results">
+          <MotionBox
+            key={query.trim()}
+            initial="initial"
+            animate="enter"
+            variants={staggerContainer}
+            display="flex"
+            direction="column"
+            gap="xs"
+            role="list"
+            aria-label="search results"
+          >
             {results.map((title) => (
-              <FocusRow
-                key={title.id}
-                role="listitem"
-                aria-selected={selected?.id === title.id}
-                onPress={() => setSelected(title)}
-              >
-                <Stack gap="2xs" style={{ flex: 1 }}>
-                  <Text size="title-sm" weight="medium">
-                    {title.name}
+              <MotionBox key={title.id} variants={item} role="listitem">
+                <FocusRow
+                  aria-selected={selected?.id === title.id}
+                  onPress={() => setSelected(title)}
+                >
+                  <Stack gap="2xs" style={{ flex: 1 }}>
+                    <Text size="title-sm" weight="semibold">
+                      {title.name}
+                    </Text>
+                    <Text size="body-sm" color="content.secondary">
+                      {title.type === 'tv' ? 'series' : 'movie'}
+                      {title.year !== null ? ` · ${title.year}` : ''}
+                    </Text>
+                  </Stack>
+                  <Text size="caption" color="content.tertiary">
+                    {selected?.id === title.id ? 'selected' : 'select'}
                   </Text>
-                  <Text size="body-sm" color="content.secondary">
-                    {title.type === 'tv' ? 'series' : 'movie'}
-                    {title.year !== null ? ` · ${title.year}` : ''}
-                  </Text>
-                </Stack>
-                <Text size="caption" color="content.tertiary">
-                  {selected?.id === title.id ? 'selected' : 'select'}
-                </Text>
-              </FocusRow>
+                </FocusRow>
+              </MotionBox>
             ))}
-          </Stack>
+          </MotionBox>
         )}
 
         {selected !== null && (
-          <Card padding="l">
-            <Stack gap="xs">
-              <Text as="h2" size="title-sm" weight="medium">
-                {selected.name} selected
-              </Text>
-              <Text size="body-sm" color="content.secondary">
-                {selected.overview ?? 'No overview available for this title.'}
-              </Text>
-              <Text size="body-sm" color="content.tertiary">
-                Episode and spoiler selection arrives in phase 2.
-              </Text>
-            </Stack>
-          </Card>
+          <MotionBox initial="initial" animate="enter" variants={item}>
+            <Card padding="l">
+              <Stack gap="xs">
+                <Text as="h2" size="title-sm" weight="semibold">
+                  {selected.name} selected
+                </Text>
+                <Text size="body-sm" color="content.secondary">
+                  {selected.overview ?? 'No overview available for this title.'}
+                </Text>
+                <Text size="body-sm" color="content.tertiary">
+                  Episode and spoiler selection arrives in phase 2.
+                </Text>
+              </Stack>
+            </Card>
+          </MotionBox>
         )}
       </Stack>
     </Box>

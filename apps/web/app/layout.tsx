@@ -6,6 +6,7 @@ import { ThemeToggle } from './components/theme-toggle';
 import { Box } from '@screen-companion/ui';
 import { Text } from '@screen-companion/ui';
 import { Inline } from '@screen-companion/ui';
+import { polysans, polysansWide } from './fonts';
 
 export const metadata: Metadata = {
   title: 'screen companion',
@@ -27,7 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
-      <body>
+      <body className={`${polysans.variable} ${polysansWide.variable}`}>
         <Box as="header" paddingX="xl" paddingY="m" border="border.subtle" borderWidth="thin" display="flex" direction="row" align="center" justify="between">
           <Inline gap="s" align="center">
             <Box width={8} height={8} radius="full" background="action.primary.default" />

@@ -7,15 +7,22 @@ html {
 }
 
 body {
+  /* next/font locals override the design-token family vars — Text's inline var() references
+     resolve against this cascade, so every size inherits the real font files */
+  --font-family-body: var(--font-polysans), ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-family-display: var(--font-polysans-wide), 'PolySans', ui-sans-serif, system-ui, sans-serif;
+
   background-color: var(--surface-base);
   color: var(--content-primary);
-  font-family:
-    ui-sans-serif,
-    system-ui,
-    -apple-system,
-    'Segoe UI',
-    Roboto,
-    sans-serif;
+  font-family: var(--font-polysans), var(--font-family-body);
   -webkit-font-smoothing: antialiased;
-  transition: background-color var(--duration-default) var(--easing-standard);
+  text-rendering: optimizeLegibility;
+  transition:
+    background-color var(--duration-default) var(--easing-standard),
+    color var(--duration-default) var(--easing-standard);
+}
+
+::selection {
+  background-color: var(--action-primary-default);
+  color: var(--content-inverse);
 }

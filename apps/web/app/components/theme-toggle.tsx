@@ -1,11 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Box } from '@screen-companion/ui';
-import { Text } from '@screen-companion/ui';
+import { Box, Text, MotionBox, pressSpring, useReducedMotion } from '@screen-companion/ui';
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<'light' | 'dark'>('light');
+  const reduce = useReducedMotion();
 
   useEffect(() => {
     setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light');
@@ -23,7 +23,7 @@ export function ThemeToggle() {
   };
 
   return (
-    <Box
+    <MotionBox
       as="button"
       focusable
       onPress={toggle}
@@ -34,10 +34,12 @@ export function ThemeToggle() {
       border="border.subtle"
       borderWidth="thin"
       aria-label={`switch to ${theme === 'dark' ? 'light' : 'dark'} mode`}
+      whileTap={!reduce ? { transform: 'scale(0.95)' } : undefined}
+      transition={pressSpring}
     >
       <Text size="caption" color="content.secondary">
         {theme === 'dark' ? 'light mode' : 'dark mode'}
       </Text>
-    </Box>
+    </MotionBox>
   );
 }

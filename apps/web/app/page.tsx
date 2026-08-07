@@ -1,11 +1,31 @@
-import Link from 'next/link';
-import { Box, Button, Stack, Text } from '@screen-companion/ui';
+'use client';
 
+import Link from 'next/link';
+import { Box, Button, MotionBox, Text, fadeOnly, fadeUp, staggerContainer, useReducedMotion } from '@screen-companion/ui';
+
+/**
+ * landing hero — first-time tier, the delight budget lives here (emil-design-eng):
+ * a gentle staggered entrance, 50ms between elements, fade + 12px rise, decelerate.
+ * reduced motion: opacity only.
+ */
 export default function LandingPage() {
+  const reduce = useReducedMotion();
+  const item = reduce ? fadeOnly() : fadeUp(12);
+
   return (
     <Box display="flex" justify="center" paddingX="m" paddingY="3xl">
-      <Stack gap="xl" maxWidth={640} width="100%" align="center">
-        <Stack gap="m" align="center">
+      <MotionBox
+        initial="initial"
+        animate="enter"
+        variants={staggerContainer}
+        display="flex"
+        direction="column"
+        gap="xl"
+        maxWidth={640}
+        width="100%"
+        align="center"
+      >
+        <MotionBox variants={item} display="flex" direction="column" gap="m" align="center">
           <Text as="h1" size="display" weight="bold" align="center">
             Understand what you watch — never more than you asked for.
           </Text>
@@ -14,15 +34,15 @@ export default function LandingPage() {
             Answers are grounded in real episode metadata and stop exactly at your spoiler
             boundary — on your phone, your browser, or your TV.
           </Text>
-        </Stack>
+        </MotionBox>
 
-        <Box display="flex" direction="row" wrap gap="m" justify="center">
+        <MotionBox variants={item} display="flex" direction="row" wrap gap="m" justify="center">
           <Link href="/search">
             <Button size="l">Find a title</Button>
           </Link>
-        </Box>
+        </MotionBox>
 
-        <Box display="flex" direction="row" wrap gap="xs" justify="center">
+        <MotionBox variants={item} display="flex" direction="row" wrap gap="xs" justify="center">
           {['general only', 'episode-only', 'season-only', 'full-series'].map((mode) => (
             <Box
               key={mode}
@@ -38,8 +58,8 @@ export default function LandingPage() {
               </Text>
             </Box>
           ))}
-        </Box>
-      </Stack>
+        </MotionBox>
+      </MotionBox>
     </Box>
   );
 }
