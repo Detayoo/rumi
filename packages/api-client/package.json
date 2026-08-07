@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@screen-companion/ai-contracts": "workspace:*",
     "@screen-companion/validation": "workspace:*"
   },
   "devDependencies": {

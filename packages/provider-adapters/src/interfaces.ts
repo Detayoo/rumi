@@ -12,6 +12,7 @@ export interface MetadataProvider {
   readonly name: string;
   searchTitles(query: string, type?: 'movie' | 'tv'): Promise<TitleSummary[]>;
   getTitle(id: string): Promise<TitleSummary | null>;
+  getSeasons(titleId: string): Promise<number[]>;
   getEpisodes(titleId: string, season: number): Promise<EpisodeSummary[]>;
   /** retrievable chunks for the companion — filtered by spoiler boundary before use (§7.2) */
   getChunks(

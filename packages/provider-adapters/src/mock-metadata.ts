@@ -32,6 +32,17 @@ const severanceEpisodes: Record<number, EpisodeSummary[]> = {
   ],
 };
 
+const officeEpisodes: Record<number, EpisodeSummary[]> = {
+  1: [
+    { id: 'of-1-1', externalId: 'ofc-1-1', titleId: 'tv-office', season: 1, number: 1, name: 'Pilot', synopsis: 'A documentary crew arrives at Dunder Mifflin and Michael introduces the office.' },
+    { id: 'of-1-2', externalId: 'ofc-1-2', titleId: 'tv-office', season: 1, number: 2, name: 'Diversity Day', synopsis: 'A sensitivity training session goes predictably sideways.' },
+    { id: 'of-1-3', externalId: 'ofc-1-3', titleId: 'tv-office', season: 1, number: 3, name: 'Health Care', synopsis: 'Michael puts Dwight in charge of choosing the company health plan.' },
+  ],
+  2: [
+    { id: 'of-2-1', externalId: 'ofc-2-1', titleId: 'tv-office', season: 2, number: 1, name: 'The Dundies', synopsis: 'The annual Dundies awards ceremony at a local Chili\u2019s.' },
+  ],
+};
+
 const titles: MockTitle[] = [
   {
     id: 'tv-severance',
@@ -42,6 +53,16 @@ const titles: MockTitle[] = [
     posterUrl: null,
     overview: 'Mark leads a team of office workers whose memories are surgically divided between work and personal lives.',
     episodeSeasons: severanceEpisodes,
+  },
+  {
+    id: 'tv-office',
+    externalId: 'tmdb-2316',
+    name: 'The Office',
+    type: 'tv',
+    year: 2005,
+    posterUrl: null,
+    overview: 'A mockumentary on a group of typical office workers at Dunder Mifflin.',
+    episodeSeasons: officeEpisodes,
   },
 ];
 
@@ -65,6 +86,14 @@ export class MockMetadataProvider implements MetadataProvider {
 
   async getEpisodes(titleId: string, season: number): Promise<EpisodeSummary[]> {
     return titles.find((t) => t.id === titleId)?.episodeSeasons[season] ?? [];
+  }
+
+  async getSeasons(titleId: string): Promise<number[]> {
+    const title = titles.find((t) => t.id === titleId);
+    if (!title) return [];
+    return Object.keys(title.episodeSeasons)
+      .map(Number)
+      .sort((a, b) => a - b);
   }
 
   /**

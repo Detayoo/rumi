@@ -43,6 +43,26 @@ export const requestContextSchema = z.object({
 });
 export type RequestContext = z.infer<typeof requestContextSchema>;
 
+/**
+ * byok (bring-your-own-key) provider selection — adr-0002.
+ * a client can name the vendor + model it wants for this question; the server pairs that
+ * with the user's stored api key (or, until the accounts phase, the server env config).
+ */
+export const aiVendorSchema = z.enum(['mock', 'openai', 'anthropic', 'google']);
+export type AiVendor = z.infer<typeof aiVendorSchema>;
+
+export const aiProviderSelectionSchema = z.object({
+  vendor: aiVendorSchema,
+  model: z.string().min(1),
+});
+export type AiProviderSelection = z.infer<typeof aiProviderSelectionSchema>;
+
+/** ask request body = context + optional provider selection */
+export const askRequestSchema = requestContextSchema.extend({
+  provider: aiProviderSelectionSchema.optional(),
+});
+export type AskRequest = z.infer<typeof askRequestSchema>;
+
 export const confidenceSchema = z.enum(['high', 'medium', 'low']);
 export type Confidence = z.infer<typeof confidenceSchema>;
 
