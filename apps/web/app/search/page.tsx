@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { Box, Button, Card, FocusRow, MotionBox, Stack, Text, TextInput, fadeOnly, fadeUp, staggerContainer, useReducedMotion } from '@screen-companion/ui';
 import type { TitleSummary } from '@screen-companion/types';
@@ -19,10 +20,10 @@ type SearchState = 'idle' | 'loading' | 'success' | 'error';
 const metadataProvider = new MockMetadataProvider();
 
 export default function SearchPage() {
+  const router = useRouter();
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<TitleSummary[]>([]);
   const [state, setState] = useState<SearchState>('idle');
-  const [selected, setSelected] = useState<TitleSummary | null>(null);
   const [error, setError] = useState<string | null>(null);
   const requestSeq = useRef(0);
   const reduce = useReducedMotion();
@@ -137,10 +138,7 @@ export default function SearchPage() {
           >
             {results.map((title) => (
               <MotionBox key={title.id} variants={item} role="listitem">
-                <FocusRow
-                  aria-selected={selected?.id === title.id}
-                  onPress={() => setSelected(title)}
-                >
+                <FocusRow onPress={() => router.push(`/titles/${title.id}`)}>
                   <Stack gap="2xs" style={{ flex: 1 }}>
                     <Text size="title-sm" weight="semibold">
                       {title.name}
@@ -151,29 +149,11 @@ export default function SearchPage() {
                     </Text>
                   </Stack>
                   <Text size="caption" color="content.tertiary">
-                    {selected?.id === title.id ? 'selected' : 'select'}
+                    open
                   </Text>
                 </FocusRow>
               </MotionBox>
             ))}
-          </MotionBox>
-        )}
-
-        {selected !== null && (
-          <MotionBox initial="initial" animate="enter" variants={item}>
-            <Card padding="l">
-              <Stack gap="xs">
-                <Text as="h2" size="title-sm" weight="semibold">
-                  {selected.name} selected
-                </Text>
-                <Text size="body-sm" color="content.secondary">
-                  {selected.overview ?? 'No overview available for this title.'}
-                </Text>
-                <Text size="body-sm" color="content.tertiary">
-                  Episode and spoiler selection arrives in phase 2.
-                </Text>
-              </Stack>
-            </Card>
           </MotionBox>
         )}
       </Stack>
