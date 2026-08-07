@@ -25,7 +25,7 @@ export const GOOGLE_MODELS: AiModelInfo[] = [
 ];
 
 export const DEEPSEEK_MODELS: AiModelInfo[] = [
-  { id: 'deepseek-chat', name: 'DeepSeek V3 (deepseek-chat)', contextWindow: 64000, description: 'general chat, cheap, fast' },
+  { id: 'deepseek-v4-flash', name: 'DeepSeek V4 Flash', contextWindow: 128000, description: 'the current fast general model' },
   { id: 'deepseek-reasoner', name: 'DeepSeek R1 (deepseek-reasoner)', contextWindow: 64000, description: 'extended reasoning model (no json mode — instructions only)' },
 ];
 
@@ -41,5 +41,5 @@ export const DEFAULT_MODEL: Record<string, string> = {
   openai: OPENAI_MODELS[0]?.id ?? 'gpt-4o-mini',
   anthropic: ANTHROPIC_MODELS[0]?.id ?? 'claude-3-5-haiku-20241022',
   google: GOOGLE_MODELS[0]?.id ?? 'gemini-2.5-flash',
-  deepseek: DEEPSEEK_MODELS[0]?.id ?? 'deepseek-chat',
+  deepseek: DEEPSEEK_MODELS[0]?.id ?? 'deepseek-v4-flash',
 };

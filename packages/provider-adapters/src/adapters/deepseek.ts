@@ -8,7 +8,7 @@ import { askOpenAiCompatible } from './openai-compatible';
  * deepseek adapter — deepseek speaks the openai wire protocol at api.deepseek.com, so the
  * shared openai-compatible ask loop does the work. one deviation: deepseek-reasoner does
  * not support json_object response format, so jsonMode is disabled for it and the prompt
- * instruction alone drives the json contract.
+ * instruction alone drives the json contract. the v4 flash model keeps full json mode.
  */
 
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';

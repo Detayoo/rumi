@@ -72,7 +72,7 @@ describe('provider registry — the byok seam (adr-0002)', () => {
     expect(vendors.map((v) => v.vendor)).toEqual(['mock', 'openai', 'anthropic', 'google', 'deepseek']);
     expect(getVendorAdapter('openai')?.availableModels[0]?.id).toBe('gpt-4o-mini');
     expect(getVendorAdapter('deepseek')?.availableModels.map((m) => m.id)).toEqual([
-      'deepseek-chat',
+      'deepseek-v4-flash',
       'deepseek-reasoner',
     ]);
     expect(getVendorAdapter('mock')?.availableModels[0]?.id).toBe('mock-inmemory');
