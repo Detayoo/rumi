@@ -1,0 +1,71 @@
+/*
+ * ui package shared styles: focus rings (browser + tv), tv programmatic focus, button loading
+ * spinner, prose typography. components themselves use inline token styles and never depend
+ * on a css framework — this file provides the small behavioral layer css can't do inline.
+ */
+
+.sc-focusable {
+  outline: none;
+}
+.sc-focusable:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+.sc-focused {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}
+
+.sc-button {
+  transition:
+    background-color var(--duration-fast) var(--easing-standard),
+    transform var(--duration-fast) var(--easing-standard);
+}
+.sc-button:not(:disabled):active {
+  transform: scale(0.98);
+}
+.sc-button:disabled {
+  cursor: not-allowed;
+}
+
+.sc-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border-radius: var(--radius-full);
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  animation: sc-spin 600ms linear infinite;
+}
+@keyframes sc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.sc-prose p {
+  margin: 0 0 var(--spacing-m);
+}
+.sc-prose p:last-child {
+  margin-bottom: 0;
+}
+.sc-prose ul,
+.sc-prose ol {
+  margin: 0 0 var(--spacing-m);
+  padding-left: var(--spacing-l);
+}
+.sc-prose li {
+  margin-bottom: var(--spacing-2xs);
+}
+.sc-prose a {
+  color: var(--content-link);
+  text-underline-offset: 2px;
+}
+.sc-prose strong {
+  font-weight: var(--weight-bold);
+}
+.sc-prose code {
+  background: var(--surface-sunken);
+  border-radius: var(--radius-xs);
+  padding: 0 var(--spacing-2xs);
+}
