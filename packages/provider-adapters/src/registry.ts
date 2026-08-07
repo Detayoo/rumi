@@ -4,6 +4,7 @@ import { MockAiProvider } from './mock-ai';
 import { openaiAdapter } from './adapters/openai';
 import { anthropicAdapter } from './adapters/anthropic';
 import { googleAdapter } from './adapters/google';
+import { deepseekAdapter } from './adapters/deepseek';
 
 /**
  * byok (bring-your-own-key) provider registry — adr-0002, requirements.md §7.7.
@@ -56,6 +57,7 @@ const registry: Partial<Record<AiVendor, AiVendorAdapter>> = {
   openai: openaiAdapter,
   anthropic: anthropicAdapter,
   google: googleAdapter,
+  deepseek: deepseekAdapter,
 };
 
 export function listSupportedVendors(): AiVendorAdapter[] {

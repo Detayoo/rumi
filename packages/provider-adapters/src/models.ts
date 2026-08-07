@@ -24,10 +24,16 @@ export const GOOGLE_MODELS: AiModelInfo[] = [
   { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', contextWindow: 1048576, description: 'strongest reasoning' },
 ];
 
+export const DEEPSEEK_MODELS: AiModelInfo[] = [
+  { id: 'deepseek-chat', name: 'DeepSeek V3 (deepseek-chat)', contextWindow: 64000, description: 'general chat, cheap, fast' },
+  { id: 'deepseek-reasoner', name: 'DeepSeek R1 (deepseek-reasoner)', contextWindow: 64000, description: 'extended reasoning model (no json mode — instructions only)' },
+];
+
 export const ALL_MODELS: Record<string, AiModelInfo[]> = {
   openai: OPENAI_MODELS,
   anthropic: ANTHROPIC_MODELS,
   google: GOOGLE_MODELS,
+  deepseek: DEEPSEEK_MODELS,
 };
 
 /** the first-listed model per vendor is the sensible default. */
@@ -35,4 +41,5 @@ export const DEFAULT_MODEL: Record<string, string> = {
   openai: OPENAI_MODELS[0]?.id ?? 'gpt-4o-mini',
   anthropic: ANTHROPIC_MODELS[0]?.id ?? 'claude-3-5-haiku-20241022',
   google: GOOGLE_MODELS[0]?.id ?? 'gemini-2.5-flash',
+  deepseek: DEEPSEEK_MODELS[0]?.id ?? 'deepseek-chat',
 };

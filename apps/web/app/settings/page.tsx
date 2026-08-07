@@ -17,6 +17,7 @@ const VENDORS: { vendor: AiVendor; label: string }[] = [
   { vendor: 'openai', label: 'OpenAI' },
   { vendor: 'anthropic', label: 'Anthropic' },
   { vendor: 'google', label: 'Google' },
+  { vendor: 'deepseek', label: 'DeepSeek' },
 ];
 
 export default function SettingsPage() {

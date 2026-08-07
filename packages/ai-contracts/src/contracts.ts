@@ -48,7 +48,7 @@ export type RequestContext = z.infer<typeof requestContextSchema>;
  * a client can name the vendor + model it wants for this question; the server pairs that
  * with the user's stored api key (or, until the accounts phase, the server env config).
  */
-export const aiVendorSchema = z.enum(['mock', 'openai', 'anthropic', 'google']);
+export const aiVendorSchema = z.enum(['mock', 'openai', 'anthropic', 'google', 'deepseek']);
 export type AiVendor = z.infer<typeof aiVendorSchema>;
 
 export const aiProviderSelectionSchema = z.object({
