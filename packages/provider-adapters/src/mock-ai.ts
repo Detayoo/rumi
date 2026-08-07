@@ -13,14 +13,24 @@ export class MockAiProvider implements AiProvider {
 
   async ask(input: AiProviderInput): Promise<AiResponse> {
     const { context, chunks } = input;
-    const episodeChunk = chunks.find((c) => c.scope?.kind === 'episode');
+
+    const episodeChunks = chunks.filter((c) => c.scope?.kind === 'episode');
+    const focused = episodeChunks.find(
+      (c) =>
+        context.episode !== undefined &&
+        c.scope?.kind === 'episode' &&
+        c.scope.season === context.episode.season &&
+        c.scope.episode === context.episode.number,
+    );
+    const cited = focused ?? episodeChunks[0];
+
     const episodeLabel =
       context.episode !== undefined
         ? `season ${context.episode.season} episode ${context.episode.number}`
         : 'the selected episode';
 
-    const answer = episodeChunk
-      ? `Based on what is known by ${episodeLabel}: ${episodeChunk.text}.`
+    const answer = cited
+      ? `Based on what is known by ${episodeLabel}: ${cited.text}.`
       : `I can only speak generally about ${context.title.name} within your spoiler boundary — no episode details are available at this level.`;
 
     return {

@@ -41,8 +41,8 @@ export interface BoxProps {
   // appearance
   background?: BackgroundToken;
   radius?: RadiusToken;
-  /** border.color tokens plus feedback.danger for error states (a semantic extension of the scale, per §1.2) */
-  border?: BorderToken | 'feedback.danger';
+  /** border.color tokens plus feedback tints for state surfaces (semantic extension of the scale, per §1.2) */
+  border?: BorderToken | 'feedback.danger' | 'feedback.warning';
   borderWidth?: 'none' | 'thin' | 'thick';
   shadow?: ElevationToken;
 

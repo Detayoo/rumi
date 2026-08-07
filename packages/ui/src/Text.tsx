@@ -13,8 +13,8 @@ import { toCssVar, type ContentToken, type FontWeight, type TextSize } from '@sc
 export interface TextProps {
   size?: TextSize;
   weight?: FontWeight;
-  /** content tokens plus feedback.danger for error text (semantic extension of the scale, per §1.2) */
-  color?: ContentToken | 'feedback.danger';
+  /** content tokens plus feedback tints for state text (semantic extension of the scale, per §1.2) */
+  color?: ContentToken | 'feedback.danger' | 'feedback.warning';
   align?: 'start' | 'center' | 'end';
   as?: 'p' | 'span' | 'h1' | 'h2' | 'h3' | 'h4' | 'label' | 'div';
   truncate?: boolean;
