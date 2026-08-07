@@ -61,6 +61,7 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   const [providerLabel, setProviderLabel] = useState<string | null>(null);
   const lastQuestion = useRef<string>('');
   const endRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
 
   useEffect(() => {
@@ -73,13 +74,13 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   }, [boundary, messages, storageKey]);
 
   useEffect(() => {
-    const end = endRef.current;
-    if (end === null) return;
-    const scroll = () => end.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' });
-    // first pass right after paint…
+    // scroll the ask-form into view (block: 'end' → input sits at the bottom edge with the
+    // newest message right above it — the classic chat position). fires after paint, then
+    // again once layout settles (entrances/fonts can shift page height mid-scroll).
+    const target = formRef.current;
+    if (target === null) return;
+    const scroll = () => target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' });
     scroll();
-    // …then again once layout has fully settled (entrance animations and font loads can
-    // shift the page height after the first pass) — a single early call often lands short.
     const settle = setTimeout(scroll, 150);
     return () => clearTimeout(settle);
   }, [messages, pending, reduce]);
@@ -329,7 +330,15 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
           <div ref={endRef} />
         </Stack>
 
-        <Box as="form" onSubmit={(event) => { event.preventDefault(); void ask(question); }} display="flex" direction="row" gap="s" align="end">
+        <Box
+          as="form"
+          ref={formRef}
+          onSubmit={(event) => { event.preventDefault(); void ask(question); }}
+          display="flex"
+          direction="row"
+          gap="s"
+          align="end"
+        >
           <Box style={{ flex: 1 }}>
             <TextInput
               label="Ask the companion"
