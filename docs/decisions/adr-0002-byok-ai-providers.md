@@ -38,3 +38,19 @@ open questions from requirements.md §19 that this partially answers:
 - user api keys: stored server-side encrypted at rest (accounts phase), never returned to the
   client (only vendor + model names). server-side key rotation per §13.
 - mock stays the default so the repo runs without secrets and tests stay deterministic.
+
+## amendments (2026-08-07, first real adapters)
+
+- **on-the-wire key for the pre-accounts phase**: the ask request body may carry an
+  `apiKey` for a real vendor. it is used for that request only, is never stored or logged,
+  and is removed when accounts land (server resolves from the user's encrypted settings).
+- **real adapters shipped**: `openai`, `anthropic`, `google` — one file each in
+  `provider-adapters/src/adapters/`, sharing the prompt/parse layer (`prompts.ts`):
+  structural system/context/question separation (§7.5 injection resistance), json-object
+  contract (§7.4), retry-once-with-stricter-instruction on parse failure, and the server
+  stamps `spoilerLevelUsed` (the model never claims the boundary).
+- **client-safe export split**: the barrel (`.`) is server-only (SDKs). `./models` (curated
+  model lists for the picker) and `./mock` (metadata mock, no node builtins) are the
+  client-safe subpaths — a client import of the barrel is a build error, not a leak.
+- **cost note**: with byok, the end user's key is charged for their own tokens; the product
+  pays only for env-configured defaults. §7.5 caps stay as abuse controls.

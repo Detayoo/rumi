@@ -3,5 +3,7 @@ packages:
   - "packages/*"
 
 allowBuilds:
+  "@google/genai": true
+  protobufjs: true
   esbuild: true
   sharp: true

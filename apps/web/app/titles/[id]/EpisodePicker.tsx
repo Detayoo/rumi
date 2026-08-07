@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Box, Button, Card, Chip, FocusRow, Stack, Text } from '@screen-companion/ui';
 import type { EpisodeSummary } from '@screen-companion/types';
-import { MockMetadataProvider } from '@screen-companion/provider-adapters';
+import { MockMetadataProvider } from '@screen-companion/provider-adapters/mock';
 
 /**
  * season → episode picker for tv titles. seasons are chips (active one inverted), episodes

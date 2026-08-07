@@ -1,15 +1,20 @@
 import type { AiProviderSelection, AiVendor } from '@screen-companion/ai-contracts';
 import type { AiProvider } from './interfaces';
 import { MockAiProvider } from './mock-ai';
+import { openaiAdapter } from './adapters/openai';
+import { anthropicAdapter } from './adapters/anthropic';
+import { googleAdapter } from './adapters/google';
 
 /**
  * byok (bring-your-own-key) provider registry — adr-0002, requirements.md §7.7.
  *
  * the end state: a user picks a vendor + model in the app and provides their own api key;
  * the server stores it encrypted and resolves the provider per request from that config.
- * today the seam is exercised via env vars (SC_AI_VENDOR / SC_AI_MODEL / SC_AI_API_KEY);
- * when the accounts phase lands, resolveAiProvider gains a user-config variant that returns
- * the exact same AiProvider shape — application code never changes.
+ * today the seam is exercised two ways: env vars (SC_AI_VENDOR / SC_AI_MODEL /
+ * SC_AI_API_KEY) for a product-owned default, and an on-the-wire apiKey from the
+ * pre-accounts byok settings (used for that request only, never stored). when the accounts
+ * phase lands, resolveAiProvider gains a user-config variant that returns the exact same
+ * AiProvider shape — application code never changes.
  *
  * adapters are registered here, one per vendor. 'mock' is the default so the app runs with
  * zero keys and zero cost; a configured-but-unregistered vendor fails loudly rather than
@@ -48,6 +53,9 @@ const MOCK_VENDOR: AiVendorAdapter = {
 /** register a real vendor adapter here (e.g. an openai adapter wrapping the openai sdk). */
 const registry: Partial<Record<AiVendor, AiVendorAdapter>> = {
   mock: MOCK_VENDOR,
+  openai: openaiAdapter,
+  anthropic: anthropicAdapter,
+  google: googleAdapter,
 };
 
 export function listSupportedVendors(): AiVendorAdapter[] {
@@ -77,16 +85,18 @@ export interface AiProviderResolution {
 
 /**
  * resolves the provider for a request. priority:
- *   1. an explicit provider on the request (byok client selection)
+ *   1. an explicit provider on the request (byok client selection) — the apiKey rides on
+ *      the wire for the pre-accounts phase (used for this request only, never stored)
  *   2. server env config (SC_AI_VENDOR + SC_AI_MODEL + SC_AI_API_KEY) — the product-owned key
  *   3. the mock provider, so the app is always runnable and always free by default
  */
 export function resolveAiProvider(
   requested?: AiProviderSelection,
   env: NodeJS.ProcessEnv = process.env,
+  clientApiKey?: string,
 ): AiProviderResolution {
   if (requested !== undefined) {
-    return { selection: requested, apiKey: requested.vendor === 'mock' ? undefined : env.SC_AI_API_KEY };
+    return { selection: requested, apiKey: requested.vendor === 'mock' ? undefined : clientApiKey };
   }
   const vendor = env.SC_AI_VENDOR;
   if (vendor !== undefined && vendor !== '' && vendor !== 'mock') {

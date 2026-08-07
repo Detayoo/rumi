@@ -57,9 +57,15 @@ export const aiProviderSelectionSchema = z.object({
 });
 export type AiProviderSelection = z.infer<typeof aiProviderSelectionSchema>;
 
-/** ask request body = context + optional provider selection */
+/**
+ * ask request body = context + optional provider selection.
+ * apiKey is the pre-accounts byok seam (adr-0002): the client's own key for a real vendor,
+ * used for this request only and never stored or logged. when accounts land, the server
+ * resolves keys from the user's encrypted settings instead and this field is removed.
+ */
 export const askRequestSchema = requestContextSchema.extend({
   provider: aiProviderSelectionSchema.optional(),
+  apiKey: z.string().min(1).optional(),
 });
 export type AskRequest = z.infer<typeof askRequestSchema>;
 

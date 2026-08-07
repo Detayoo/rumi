@@ -65,7 +65,7 @@ export async function POST(request: Request): Promise<NextResponse<Envelope<AiRe
   if (!parsed.success) {
     return errorEnvelope(400, 'invalid_request', 'request context failed validation.', requestId);
   }
-  const { provider: requestedProvider, ...context } = parsed.data;
+  const { provider: requestedProvider, apiKey: clientApiKey, ...context } = parsed.data;
 
   const store = await cookies();
   const currentQuota = verifyQuota(store.get(QUOTA_COOKIE)?.value);
@@ -81,7 +81,7 @@ export async function POST(request: Request): Promise<NextResponse<Envelope<AiRe
 
   let ai: AiProvider;
   try {
-    const resolution = resolveAiProvider(requestedProvider);
+    const resolution = resolveAiProvider(requestedProvider, process.env, clientApiKey);
     ai = createAiProvider(resolution.selection, resolution.apiKey);
   } catch (cause) {
     const message = cause instanceof ProviderNotConfiguredError ? cause.message : 'ai provider configuration error.';

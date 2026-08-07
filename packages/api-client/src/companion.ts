@@ -17,10 +17,12 @@ export async function askQuestion(
   client: ApiClient,
   context: RequestContext,
   provider?: AiProviderSelection,
+  apiKey?: string,
 ): Promise<AiResponse> {
   const envelope = await client.post<AskResponseEnvelope>('/api/v1/companion/ask', {
     ...context,
     provider,
+    apiKey,
   });
   return envelope.data;
 }

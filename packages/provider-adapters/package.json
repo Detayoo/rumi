@@ -6,15 +6,20 @@
   "main": "./src/index.ts",
   "types": "./src/index.ts",
   "exports": {
-    ".": "./src/index.ts"
+    ".": "./src/index.ts",
+    "./models": "./src/models.ts",
+    "./mock": "./src/mock.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "@google/genai": "^2.16.0",
     "@screen-companion/ai-contracts": "workspace:*",
     "@screen-companion/shared-utils": "workspace:*",
-    "@screen-companion/types": "workspace:*"
+    "@screen-companion/types": "workspace:*",
+    "openai": "^7.4.0"
   },
   "devDependencies": {
     "typescript": "^5.5.4"

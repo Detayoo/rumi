@@ -5,6 +5,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { ApiClient, ApiError, askQuestion } from '@screen-companion/api-client';
 import { Box, Button, Card, ChatBubble, Chip, SpoilerBadge, Stack, Text, TextInput } from '@screen-companion/ui';
 import { conversationKey, loadConversation, saveConversation, type ConversationMessage } from '@/lib/conversation';
+import { loadAiSettings } from '@/lib/ai-settings';
 import type { SpoilerMode } from '@screen-companion/ai-contracts';
 import type { EpisodeSummary, TitleSummary } from '@screen-companion/types';
 
@@ -57,8 +58,14 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   const [slow, setSlow] = useState(false);
   const [degraded, setDegraded] = useState(false);
   const [error, setError] = useState<{ title: string; detail: string; retryable: boolean } | null>(null);
+  const [providerLabel, setProviderLabel] = useState<string | null>(null);
   const lastQuestion = useRef<string>('');
   const endRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const settings = loadAiSettings();
+    setProviderLabel(settings !== null ? `${settings.vendor} · ${settings.model}` : null);
+  }, []);
 
   useEffect(() => {
     saveConversation(storageKey, { boundary, messages });
@@ -121,7 +128,13 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
       }, TIMEOUT_MS);
 
       try {
-        const response = await askQuestion(client, buildContext(trimmed));
+        const settings = loadAiSettings();
+        const response = await askQuestion(
+          client,
+          buildContext(trimmed),
+          settings !== null ? { vendor: settings.vendor, model: settings.model } : undefined,
+          settings?.apiKey,
+        );
         setMessages((current) => [
           ...current,
           {
@@ -143,7 +156,10 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
           } else {
             setError({
               title: cause.code === 'timeout' ? 'Taking longer than usual' : 'Couldn’t get an answer',
-              detail: cause.message,
+              detail:
+                cause.code === 'provider_error'
+                  ? `${cause.message} If you’re using your own key, double-check it in provider settings.`
+                  : cause.message,
               retryable: cause.status === 504 || cause.status === 500 || cause.status === 0,
             });
           }
@@ -166,19 +182,28 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   return (
     <Box display="flex" justify="center" paddingX="m" paddingY="xl">
       <Stack gap="l" maxWidth={640} width="100%">
-        <Stack gap="2xs">
-          <Link href={`/titles/${title.id}`}>
-            <Text size="body-sm" color="content.link">
-              ← back to {title.name}
+          <Stack gap="2xs">
+            <Link href={`/titles/${title.id}`}>
+              <Text size="body-sm" color="content.link">
+                ← back to {title.name}
+              </Text>
+            </Link>
+            <Text as="h1" size="title-lg" weight="bold">
+              {title.name}
             </Text>
-          </Link>
-          <Text as="h1" size="title-lg" weight="bold">
-            {title.name}
-          </Text>
-          <Text size="caption" color="content.tertiary">
-            {episodeLabel}
-          </Text>
-        </Stack>
+            <Text size="caption" color="content.tertiary">
+              {episodeLabel}
+            </Text>
+            <Text size="caption" color="content.tertiary">
+              {providerLabel !== null ? `answering with ${providerLabel} · your key` : 'answering with the built-in demo engine'}
+              {' · '}
+              <Link href="/settings">
+                <Text as="span" size="caption" color="content.link">
+                  provider settings
+                </Text>
+              </Link>
+            </Text>
+          </Stack>
 
         <Card padding="m">
           <Stack gap="s">

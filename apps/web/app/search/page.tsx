@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import type { FormEvent } from 'react';
 import { Box, Button, Card, FocusRow, MotionBox, Stack, Text, TextInput, fadeOnly, fadeUp, staggerContainer, useReducedMotion } from '@screen-companion/ui';
 import type { TitleSummary } from '@screen-companion/types';
-import { MockMetadataProvider } from '@screen-companion/provider-adapters';
+import { MockMetadataProvider } from '@screen-companion/provider-adapters/mock';
 
 /**
  * search screen (phase 1 shell) — queries the in-memory mock metadata provider directly.

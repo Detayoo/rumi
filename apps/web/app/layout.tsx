@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import Link from 'next/link';
 import '@screen-companion/design-tokens/browser.css';
 import '@screen-companion/ui/ui.css';
 import './globals.css';
@@ -36,7 +37,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               screen companion
             </Text>
           </Inline>
-          <ThemeToggle />
+          <Inline gap="s" align="center">
+            <Link href="/settings">
+              <Text size="caption" color="content.secondary">
+                provider
+              </Text>
+            </Link>
+            <ThemeToggle />
+          </Inline>
         </Box>
         {children}
       </body>
