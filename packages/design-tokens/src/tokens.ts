@@ -73,7 +73,12 @@ export const textSizes = [
 ] as const;
 export type TextSize = (typeof textSizes)[number];
 
-export const fontWeights = ['regular', 'medium', 'bold'] as const;
+/**
+ * font weights — pinned to what the PolySans family actually ships (slim 300 / neutral 400 /
+ * median 600 / bulky 700). there is no 500 cut, so a "medium" token would be synthesised by
+ * the browser (fake bold). the scale is named for the real files, per §1.2.
+ */
+export const fontWeights = ['light', 'regular', 'semibold', 'bold'] as const;
 export type FontWeight = (typeof fontWeights)[number];
 
 export const elevationTokens = ['none', 'low', 'medium', 'high'] as const;

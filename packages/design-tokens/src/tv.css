@@ -84,10 +84,15 @@
   --text-caption: 18px;
   --leading-caption: 24px;
 
-  /* weight */
+  /* weight — real PolySans cuts only (300/400/600/700); no synthetic weights */
+  --weight-light: 300;
   --weight-regular: 400;
-  --weight-medium: 500;
+  --weight-semibold: 600;
   --weight-bold: 700;
+
+  /* font family — display maps to the wide cut (hero), body to the standard cut */
+  --font-family-display: 'PolySans Wide', 'PolySans', ui-sans-serif, system-ui, sans-serif;
+  --font-family-body: 'PolySans', ui-sans-serif, system-ui, -apple-system, sans-serif;
 
   /* elevation — all flat on tv, per §2.5 */
   --shadow-none: none;
