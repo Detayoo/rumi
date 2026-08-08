@@ -2,13 +2,14 @@ import OpenAI from 'openai';
 import type { AiProvider } from '../interfaces';
 import type { AiVendorAdapter } from '../registry';
 import { DEEPSEEK_MODELS } from '../models';
-import { askOpenAiCompatible } from './openai-compatible';
+import { askOpenAiCompatible, askOpenAiCompatibleStream } from './openai-compatible';
 
 /**
  * deepseek adapter — deepseek speaks the openai wire protocol at api.deepseek.com, so the
  * shared openai-compatible ask loop does the work. one deviation: deepseek-reasoner does
  * not support json_object response format, so jsonMode is disabled for it and the prompt
  * instruction alone drives the json contract. the v4 flash model keeps full json mode.
+ * deepseek surfaces its "thinking" as delta.reasoning_content — streamed to the ui live.
  */
 
 const DEEPSEEK_BASE_URL = 'https://api.deepseek.com';
@@ -23,6 +24,9 @@ export const deepseekAdapter: AiVendorAdapter = {
       name: `deepseek:${selection.model}`,
       ask(input) {
         return askOpenAiCompatible(client, selection.model, input, jsonMode);
+      },
+      askStream(input, callbacks) {
+        return askOpenAiCompatibleStream(client, selection.model, input, callbacks, jsonMode);
       },
     };
     return provider;

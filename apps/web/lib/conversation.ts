@@ -16,6 +16,10 @@ export interface ConversationMessage {
   /** present on assistant messages — the boundary actually used to answer */
   spoilerMode?: SpoilerMode;
   followUpQuestions?: string[];
+  /** the model's reasoning trace (deepseek reasoning_content / anthropic thinking / …) */
+  thinking?: string;
+  /** how long the model spent reasoning, rounded seconds */
+  thinkingSeconds?: number;
 }
 
 export interface ConversationState {

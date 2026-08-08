@@ -37,6 +37,8 @@ export interface BoxProps {
   height?: string | number;
   minWidth?: string | number;
   maxWidth?: string | number;
+  minHeight?: string | number;
+  maxHeight?: string | number;
 
   // appearance
   background?: BackgroundToken;
@@ -130,6 +132,8 @@ export function Box(props: BoxProps): ReactNode {
     height,
     minWidth,
     maxWidth,
+    minHeight,
+    maxHeight,
     background,
     radius,
     border,
@@ -156,6 +160,8 @@ export function Box(props: BoxProps): ReactNode {
     height,
     minWidth,
     maxWidth,
+    minHeight,
+    maxHeight,
     backgroundColor: background === undefined ? undefined : toCssVar(background),
     borderRadius: radius === undefined ? undefined : toCssVar(`radius.${radius}`),
     borderColor: border === undefined ? undefined : toCssVar(border),

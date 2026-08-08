@@ -4,8 +4,20 @@ import {
   type AiResponse,
   type RequestContext,
 } from '@screen-companion/ai-contracts';
-import { filterByBoundary } from '@screen-companion/shared-utils';
+import { filterByBoundary, type RetrievalChunk } from '@screen-companion/shared-utils';
 import type { AiProvider, MetadataProvider } from './interfaces';
+
+/**
+ * retrieves the boundary-safe corpus: candidate chunks → spoiler filter (§7.2).
+ * shared by the one-shot and streaming paths — the filter is the single narrowing control.
+ */
+export async function retrieveBoundarySafeChunks(
+  metadata: MetadataProvider,
+  context: RequestContext,
+): Promise<RetrievalChunk[]> {
+  const chunks = await metadata.getChunks(context.title.id, context.episode);
+  return filterByBoundary(chunks, context.spoilerBoundary);
+}
 
 /**
  * companion orchestration — the one place the spoiler flow is wired together (§7.2, §7.4):
@@ -19,8 +31,7 @@ export async function askCompanion(
   ai: AiProvider,
   context: RequestContext,
 ): Promise<AiResponse> {
-  const chunks = await metadata.getChunks(context.title.id, context.episode);
-  const boundarySafe = filterByBoundary(chunks, context.spoilerBoundary);
+  const boundarySafe = await retrieveBoundarySafeChunks(metadata, context);
 
   const raw = await ai.ask({ context, chunks: boundarySafe });
 

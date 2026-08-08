@@ -21,6 +21,15 @@ export interface MetadataProvider {
   ): Promise<RetrievalChunk[]>;
 }
 
+/** streamed deltas from a reasoning-capable model (deepseek reasoning_content, openai
+ *  reasoning, anthropic thinking blocks, gemini thoughts). */
+export interface AiStreamCallbacks {
+  /** incremental reasoning text — safe to show live: never part of the json contract */
+  onThinking?: (delta: string) => void;
+  /** incremental answer text — raw model output, not yet contract-validated */
+  onText?: (delta: string) => void;
+}
+
 export interface AiProviderInput {
   context: RequestContext;
   /** already filtered by the spoiler boundary — the provider must never receive out-of-boundary text (§7.2) */
@@ -30,4 +39,9 @@ export interface AiProviderInput {
 export interface AiProvider {
   readonly name: string;
   ask(input: AiProviderInput): Promise<AiResponse>;
+  /**
+   * streaming variant — emits reasoning + answer deltas in real time and resolves with the
+   * same validated response ask() returns. optional: providers without it fall back to ask().
+   */
+  askStream?(input: AiProviderInput, callbacks: AiStreamCallbacks): Promise<AiResponse>;
 }

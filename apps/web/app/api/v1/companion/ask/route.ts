@@ -1,13 +1,18 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { randomUUID } from 'node:crypto';
-import { askRequestSchema, type AiResponse } from '@screen-companion/ai-contracts';
+import {
+  askRequestSchema,
+  type AiResponse,
+  type RequestContext,
+} from '@screen-companion/ai-contracts';
 import {
   askCompanion,
   createAiProvider,
   MockMetadataProvider,
   ProviderNotConfiguredError,
   resolveAiProvider,
+  retrieveBoundarySafeChunks,
   type AiProvider,
 } from '@screen-companion/provider-adapters';
 import {
@@ -18,6 +23,7 @@ import {
   signQuota,
   utcDayKey,
   verifyQuota,
+  type AnonQuota,
 } from '@/lib/anon-quota';
 
 /**
@@ -29,6 +35,8 @@ import {
  * 4. retrieve + boundary-filter + ask through provider-adapters
  * 5. 12s server-side timeout → typed timeout response, never a hang (§7.6)
  * 6. consistent error envelope on every failure (§9.2), requestId on every log line (§3.4)
+ * 7. Accept: text/event-stream → sse stream: thinking → text → done, so the model's
+ *    reasoning is visible live in the companion ui
  *
  * auth + per-user stored keys arrive with supabase (phase 4) — until then every session is
  * anonymous and the provider comes from env or defaults to mock.
@@ -50,7 +58,7 @@ function errorEnvelope(status: number, code: string, message: string, requestId:
   return NextResponse.json({ error: { code, message, requestId } }, { status });
 }
 
-export async function POST(request: Request): Promise<NextResponse<Envelope<AiResponse>>> {
+export async function POST(request: Request): Promise<NextResponse<Envelope<AiResponse>> | Response> {
   const requestId = randomUUID();
   const startedAt = Date.now();
   const day = utcDayKey();
@@ -91,6 +99,13 @@ export async function POST(request: Request): Promise<NextResponse<Envelope<AiRe
     const message = cause instanceof ProviderNotConfiguredError ? cause.message : 'ai provider configuration error.';
     console.log(JSON.stringify({ event: 'ai_request', requestId, outcome: 'provider_config_error', error: message }));
     return errorEnvelope(500, 'provider_error', 'the ai provider you asked for is not configured — check the provider settings.', requestId);
+  }
+
+  // streaming: the client asks with Accept: text/event-stream to watch the model's
+  // reasoning live (thinking → text → done). everything else stays one-shot json.
+  const wantsStream = request.headers.get('accept')?.includes('text/event-stream') ?? false;
+  if (wantsStream) {
+    return streamAskResponse({ ai, context, policy, currentQuota, day, requestId, startedAt });
   }
 
   const timeout = new Promise<never>((_, reject) => {
@@ -145,4 +160,97 @@ export async function POST(request: Request): Promise<NextResponse<Envelope<AiRe
     }
     return errorEnvelope(500, 'provider_error', 'the answer service is unavailable right now — please try again shortly.', requestId);
   }
+}
+
+interface StreamAskParams {
+  ai: AiProvider;
+  context: RequestContext;
+  policy: 'byok' | 'anon';
+  currentQuota: AnonQuota | null;
+  day: string;
+  requestId: string;
+  startedAt: number;
+}
+
+/**
+ * sse streaming response — events: `thinking` (reasoning deltas, live), `text` (answer
+ * deltas), `done` (validated response), `error` (typed envelope). the anon quota cookie is
+ * applied on completion via a manual Set-Cookie header (a raw Response has no cookie api).
+ */
+function streamAskResponse({ ai, context, policy, currentQuota, day, requestId, startedAt }: StreamAskParams): Response {
+  const encoder = new TextEncoder();
+
+  const stream = new ReadableStream({
+    async start(controller) {
+      const send = (event: string, payload: unknown) => {
+        controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(payload)}\n\n`));
+      };
+
+      let finished = false;
+      const timeout = setTimeout(() => {
+        if (finished) return;
+        finished = true;
+        send('error', { code: 'timeout', message: 'this is taking longer than usual — please try again.', requestId });
+        controller.close();
+      }, AI_TIMEOUT_MS);
+
+      try {
+        const chunks = await retrieveBoundarySafeChunks(metadata, context);
+        const response =
+          ai.askStream === undefined
+            ? await ai.ask({ context, chunks })
+            : await ai.askStream(
+                { context, chunks },
+                {
+                  onThinking: (delta) => send('thinking', { delta }),
+                  onText: (delta) => send('text', { delta }),
+                },
+              );
+        send('done', { response });
+        finished = true;
+        clearTimeout(timeout);
+
+        console.log(
+          JSON.stringify({
+            event: 'ai_request',
+            requestId,
+            outcome: 'ok',
+            streamed: true,
+            latencyMs: Date.now() - startedAt,
+            model: ai.name,
+            quotaPolicy: policy,
+            spoilerMode: context.spoilerBoundary.mode,
+          }),
+        );
+        controller.close();
+      } catch (cause) {
+        finished = true;
+        clearTimeout(timeout);
+        console.log(
+          JSON.stringify({
+            event: 'ai_request',
+            requestId,
+            outcome: 'stream_error',
+            error: cause instanceof Error ? cause.message : 'unknown',
+            model: ai.name,
+          }),
+        );
+        send('error', { code: 'provider_error', message: 'the answer service is unavailable right now — please try again shortly.', requestId });
+        controller.close();
+      }
+    },
+  });
+
+  const headers: Record<string, string> = {
+    'content-type': 'text/event-stream',
+    'cache-control': 'no-cache, no-transform',
+    connection: 'keep-alive',
+  };
+
+  const updated = policy === 'byok' ? null : nextQuota(currentQuota, day);
+  if (updated !== null) {
+    headers['set-cookie'] = `${QUOTA_COOKIE}=${signQuota(updated)}; HttpOnly; SameSite=Lax; Path=/; Max-Age=86400${process.env.NODE_ENV === 'production' ? '; Secure' : ''}`;
+  }
+
+  return new Response(stream, { headers });
 }

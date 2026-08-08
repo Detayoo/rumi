@@ -2,11 +2,11 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ApiClient, ApiError, askQuestion } from '@screen-companion/api-client';
 import { Box, Button, Card, ChatBubble, Chip, SpoilerBadge, Stack, Text, TextInput, useReducedMotion } from '@screen-companion/ui';
 import { conversationKey, loadConversation, saveConversation, type ConversationMessage } from '@/lib/conversation';
 import { loadAiSettings } from '@/lib/ai-settings';
-import type { SpoilerMode } from '@screen-companion/ai-contracts';
+import { parseSseStream } from '@/lib/sse';
+import type { SpoilerMode, AiResponse } from '@screen-companion/ai-contracts';
 import type { EpisodeSummary, TitleSummary } from '@screen-companion/types';
 
 /**
@@ -15,14 +15,13 @@ import type { EpisodeSummary, TitleSummary } from '@screen-companion/types';
  *   appends a system message so the transcript explains why an answer's scope shifted
  * - retrieval-time filtering happens server-side (§7.2) — this screen only renders
  *   validated responses through ChatBubble (sanitized via Prose, §13)
- * - loading state appears past 400ms; a 12s timeout shows the §7.6 degraded card with retry
+ * - the ask is an sse stream: the model's reasoning streams into a live, collapsible
+ *   thinking panel; the answer renders once the server validates the contract
+ * - a 12s client guard shows the §7.6 degraded card with retry
  * - the transcript + boundary persist per (title, episode) in local storage until supabase
  *   conversations land (phase 4)
  */
 
-const client = new ApiClient('');
-
-const SLOW_THRESHOLD_MS = 400;
 const TIMEOUT_MS = 12_000;
 
 const BOUNDARY_LABEL: Record<SpoilerMode, string> = {
@@ -32,9 +31,43 @@ const BOUNDARY_LABEL: Record<SpoilerMode, string> = {
   'full-series': 'full-series',
 };
 
+interface ThinkingState {
+  text: string;
+  startedAt: number;
+}
+
 interface CompanionScreenProps {
   title: TitleSummary;
   episode?: EpisodeSummary;
+}
+
+/** collapsible reasoning note shown under an answer that thought first. */
+function ThinkingNote({ text, seconds }: { text: string; seconds: number }) {
+  const [expanded, setExpanded] = useState(false);
+  return (
+    <Box background="surface.sunken" radius="s" paddingX="m" paddingY="s" maxWidth="80%">
+      <Stack gap="xs">
+        <Box
+          as="button"
+          focusable
+          onPress={() => setExpanded(!expanded)}
+          display="inline-flex"
+          align="center"
+          gap="xs"
+          aria-expanded={expanded}
+        >
+          <Text size="caption" color="content.tertiary">
+            {expanded ? 'hide reasoning' : `thought for ${seconds}s`}
+          </Text>
+        </Box>
+        {expanded && (
+          <Text size="caption" color="content.secondary" style={{ whiteSpace: 'pre-wrap' }}>
+            {text}
+          </Text>
+        )}
+      </Stack>
+    </Box>
+  );
 }
 
 export function CompanionScreen({ title, episode }: CompanionScreenProps) {
@@ -54,15 +87,25 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
     return loadConversation(storageKey)?.messages ?? [];
   });
   const [question, setQuestion] = useState('');
-  const [pending, setPending] = useState(false);
-  const [slow, setSlow] = useState(false);
+  const [thinking, setThinking] = useState<ThinkingState | null>(null);
+  const [thinkingSeconds, setThinkingSeconds] = useState(0);
+  const [showThinkingLive, setShowThinkingLive] = useState(true);
   const [degraded, setDegraded] = useState(false);
   const [error, setError] = useState<{ title: string; detail: string; retryable: boolean } | null>(null);
   const [providerLabel, setProviderLabel] = useState<string | null>(null);
   const lastQuestion = useRef<string>('');
-  const endRef = useRef<HTMLDivElement>(null);
+  const thinkingRef = useRef<ThinkingState | null>(null);
   const formRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
+
+  // live elapsed-seconds ticker so the pending state visibly moves even for models
+  // that never emit reasoning (v4 flash, gpt-4o-mini, …)
+  useEffect(() => {
+    if (thinking === null) return;
+    setThinkingSeconds(0);
+    const tick = setInterval(() => setThinkingSeconds((s) => s + 1), 1000);
+    return () => clearInterval(tick);
+  }, [thinking !== null]);
 
   useEffect(() => {
     const settings = loadAiSettings();
@@ -74,16 +117,13 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   }, [boundary, messages, storageKey]);
 
   useEffect(() => {
-    // scroll the ask-form into view (block: 'end' → input sits at the bottom edge with the
-    // newest message right above it — the classic chat position). fires after paint, then
-    // again once layout settles (entrances/fonts can shift page height mid-scroll).
     const target = formRef.current;
     if (target === null) return;
     const scroll = () => target.scrollIntoView({ behavior: reduce ? 'auto' : 'smooth', block: 'end' });
     scroll();
     const settle = setTimeout(scroll, 150);
     return () => clearTimeout(settle);
-  }, [messages, pending, reduce]);
+  }, [messages, thinking, reduce]);
 
   const changeBoundary = (next: SpoilerMode) => {
     if (next === boundary) return;
@@ -121,70 +161,102 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   const ask = useCallback(
     async (questionText: string) => {
       const trimmed = questionText.trim();
-      if (trimmed === '' || pending) return;
+      if (trimmed === '' || thinkingRef.current !== null) return;
 
       lastQuestion.current = trimmed;
       setQuestion('');
       setError(null);
-      setSlow(false);
       setDegraded(false);
       setMessages((current) => [...current, { id: crypto.randomUUID(), role: 'user', content: trimmed }]);
-      setPending(true);
 
-      const slowTimer = setTimeout(() => setSlow(true), SLOW_THRESHOLD_MS);
+      const startedAt = Date.now();
+      thinkingRef.current = { text: '', startedAt };
+      setThinking(thinkingRef.current);
+
       const timeoutTimer = setTimeout(() => {
         setDegraded(true);
-        setPending(false);
+        setThinking(null);
       }, TIMEOUT_MS);
 
+      const settings = loadAiSettings();
       try {
-        const settings = loadAiSettings();
-        const response = await askQuestion(
-          client,
-          buildContext(trimmed),
-          settings !== null ? { vendor: settings.vendor, model: settings.model } : undefined,
-          settings?.apiKey,
-        );
+        const response = await fetch('/api/v1/companion/ask', {
+          method: 'POST',
+          headers: {
+            'content-type': 'application/json',
+            accept: 'text/event-stream',
+          },
+          body: JSON.stringify({
+            ...buildContext(trimmed),
+            provider: settings !== null ? { vendor: settings.vendor, model: settings.model } : undefined,
+            apiKey: settings?.apiKey,
+          }),
+        });
+
+        if (!response.ok || response.body === null) {
+          const envelope = (await response.json().catch(() => null)) as { error?: { code: string; message: string } } | null;
+          throw Object.assign(new Error(envelope?.error?.message ?? 'the request failed.'), {
+            code: envelope?.error?.code ?? 'unknown_error',
+            status: response.status,
+          });
+        }
+
+        let answer: AiResponse | null = null;
+        for await (const event of parseSseStream(response.body)) {
+          if (event.event === 'thinking') {
+            const delta = (event.data as { delta?: string }).delta ?? '';
+            if (delta !== '') {
+              if (thinkingRef.current !== null) {
+                thinkingRef.current = { ...thinkingRef.current, text: thinkingRef.current.text + delta };
+              }
+              setThinking((t) => (t !== null ? { ...t, text: t.text + delta } : t));
+            }
+          } else if (event.event === 'done') {
+            answer = (event.data as { response: AiResponse }).response;
+            break;
+          } else if (event.event === 'error') {
+            const payload = event.data as { code: string; message: string };
+            throw Object.assign(new Error(payload.message), { code: payload.code, status: 500 });
+          }
+        }
+
+        if (answer === null) throw new Error('the stream ended without an answer.');
+        const elapsed = Math.round((Date.now() - startedAt) / 1000);
         setMessages((current) => [
           ...current,
           {
             id: crypto.randomUUID(),
             role: 'assistant',
-            content: response.answer,
-            spoilerMode: response.spoilerLevelUsed,
-            followUpQuestions: response.followUpQuestions,
+            content: answer.answer,
+            spoilerMode: answer.spoilerLevelUsed,
+            followUpQuestions: answer.followUpQuestions,
+            thinking: (thinkingRef.current?.text.trim() ?? '') || undefined,
+            thinkingSeconds: elapsed,
           },
         ]);
+        thinkingRef.current = null;
+        setThinking(null);
       } catch (cause) {
-        if (cause instanceof ApiError) {
-          if (cause.code === 'rate_limited') {
-            setError({
-              title: 'Daily question limit reached',
-              detail: cause.message,
-              retryable: false,
-            });
-          } else {
-            setError({
-              title: cause.code === 'timeout' ? 'Taking longer than usual' : 'Couldn’t get an answer',
-              detail:
-                cause.code === 'provider_error'
-                  ? `${cause.message} If you’re using your own key, double-check it in provider settings.`
-                  : cause.message,
-              retryable: cause.status === 504 || cause.status === 500 || cause.status === 0,
-            });
-          }
+        const err = cause as Error & { code?: string; status?: number };
+        if (err.code === 'rate_limited') {
+          setError({ title: 'Daily question limit reached', detail: err.message, retryable: false });
         } else {
-          setError({ title: 'Something went wrong', detail: 'Please try again in a moment.', retryable: true });
+          setError({
+            title: err.code === 'timeout' ? 'Taking longer than usual' : 'Couldn’t get an answer',
+            detail:
+              err.code === 'provider_error'
+                ? `${err.message} If you’re using your own key, double-check it in provider settings.`
+                : err.message,
+            retryable: err.status === 504 || err.status === 500 || err.status === 0,
+          });
         }
+        thinkingRef.current = null;
+        setThinking(null);
       } finally {
-        clearTimeout(slowTimer);
         clearTimeout(timeoutTimer);
-        setPending(false);
-        setSlow(false);
-        setDegraded(false);
       }
     },
-    [buildContext, pending],
+    [buildContext],
   );
 
   const episodeLabel = episode ? `S${episode.season}E${episode.number} — ${episode.name}` : title.name;
@@ -192,28 +264,28 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   return (
     <Box display="flex" justify="center" paddingX="m" paddingY="xl">
       <Stack gap="l" maxWidth={640} width="100%">
-          <Stack gap="2xs">
-            <Link href={`/titles/${title.id}`}>
-              <Text size="body-sm" color="content.link">
-                ← back to {title.name}
+        <Stack gap="2xs">
+          <Link href={`/titles/${title.id}`}>
+            <Text size="body-sm" color="content.link">
+              ← back to {title.name}
+            </Text>
+          </Link>
+          <Text as="h1" size="title-lg" weight="bold">
+            {title.name}
+          </Text>
+          <Text size="caption" color="content.tertiary">
+            {episodeLabel}
+          </Text>
+          <Text size="caption" color="content.tertiary">
+            {providerLabel !== null ? `answering with ${providerLabel} · your key` : 'answering with the built-in demo engine'}
+            {' · '}
+            <Link href="/settings">
+              <Text as="span" size="caption" color="content.link">
+                provider settings
               </Text>
             </Link>
-            <Text as="h1" size="title-lg" weight="bold">
-              {title.name}
-            </Text>
-            <Text size="caption" color="content.tertiary">
-              {episodeLabel}
-            </Text>
-            <Text size="caption" color="content.tertiary">
-              {providerLabel !== null ? `answering with ${providerLabel} · your key` : 'answering with the built-in demo engine'}
-              {' · '}
-              <Link href="/settings">
-                <Text as="span" size="caption" color="content.link">
-                  provider settings
-                </Text>
-              </Link>
-            </Text>
-          </Stack>
+          </Text>
+        </Stack>
 
         <Card padding="m">
           <Stack gap="s">
@@ -243,7 +315,7 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
         </Card>
 
         <Stack gap="s" role="log" aria-label="conversation">
-          {messages.length === 0 && !pending && (
+          {messages.length === 0 && thinking === null && (
             <Card padding="l">
               <Stack gap="xs" align="center">
                 <Text as="h2" size="title-sm" weight="semibold">
@@ -263,27 +335,51 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
                 {message.content}
               </Text>
             ) : (
-              <ChatBubble
-                key={message.id}
-                role={message.role === 'user' ? 'user' : 'assistant'}
-                content={message.content}
-                spoilerMode={message.spoilerMode}
-                followUpQuestions={message.followUpQuestions}
-                onFollowUpPress={(q) => void ask(q)}
-              />
+              <Stack key={message.id} gap="xs" align={message.role === 'user' ? 'end' : 'start'} width="100%">
+                <ChatBubble
+                  role={message.role === 'user' ? 'user' : 'assistant'}
+                  content={message.content}
+                  spoilerMode={message.spoilerMode}
+                  followUpQuestions={message.followUpQuestions}
+                  onFollowUpPress={(q) => void ask(q)}
+                />
+                {message.thinking !== undefined && (
+                  <ThinkingNote text={message.thinking} seconds={message.thinkingSeconds ?? 0} />
+                )}
+              </Stack>
             ),
           )}
 
-          {pending && (
-            <Card padding="l" border="border.subtle">
-              <Stack gap="2xs">
-                <Text size="body-md" color="content.secondary">
-                  {slow ? 'Still thinking…' : 'Thinking'}
-                </Text>
-                {slow && (
-                  <Text size="caption" color="content.tertiary">
-                    Good answers take a moment — they’re checked against episode metadata.
+          {thinking !== null && (
+            <Card padding="m" border="border.subtle">
+              <Stack gap="s">
+                <Box display="flex" direction="row" align="center" gap="s">
+                  <span className="sc-spinner" style={{ fontSize: 'var(--text-caption)' }} aria-hidden="true" />
+                  <Text size="caption" color="content.secondary">
+                    thinking…
                   </Text>
+                  <Text size="caption" color="content.tertiary">
+                    {thinkingSeconds}s
+                  </Text>
+                  {thinking.text !== '' && (
+                    <Box
+                      as="button"
+                      focusable
+                      onPress={() => setShowThinkingLive(!showThinkingLive)}
+                      aria-expanded={showThinkingLive}
+                    >
+                      <Text size="caption" color="content.tertiary">
+                        {showThinkingLive ? 'hide reasoning' : 'show reasoning'}
+                      </Text>
+                    </Box>
+                  )}
+                </Box>
+                {showThinkingLive && thinking.text !== '' && (
+                  <Box background="surface.base" radius="s" padding="s" maxHeight={200} style={{ overflowY: 'auto' }}>
+                    <Text size="caption" color="content.secondary" style={{ whiteSpace: 'pre-wrap' }}>
+                      {thinking.text}
+                    </Text>
+                  </Box>
                 )}
               </Stack>
             </Card>
@@ -326,8 +422,6 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
               </Stack>
             </Card>
           )}
-
-          <div ref={endRef} />
         </Stack>
 
         <Box
@@ -345,11 +439,11 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
               value={question}
               onChange={setQuestion}
               placeholder={isTv ? `About S${episode?.season ?? '?'}E${episode?.number ?? '?'} — ${episode?.name ?? ''}`.trim() : 'Ask about this movie…'}
-              disabled={pending}
+              disabled={thinking !== null}
             />
           </Box>
-          <Button type="submit" disabled={pending || question.trim() === ''}>
-            {pending ? 'Asking' : 'Ask'}
+          <Button type="submit" disabled={thinking !== null || question.trim() === ''}>
+            {thinking !== null ? 'Thinking' : 'Ask'}
           </Button>
         </Box>
       </Stack>
