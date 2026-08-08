@@ -95,8 +95,18 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
   const [providerLabel, setProviderLabel] = useState<string | null>(null);
   const lastQuestion = useRef<string>('');
   const thinkingRef = useRef<ThinkingState | null>(null);
+  const thinkingBoxRef = useRef<HTMLElement>(null);
   const formRef = useRef<HTMLElement>(null);
   const reduce = useReducedMotion();
+
+  // follow the reasoning stream: keep the box scrolled to the newest text — but only while
+  // the reader is already near the bottom, so scrolling up to re-read isn't interrupted.
+  useEffect(() => {
+    const box = thinkingBoxRef.current;
+    if (box === null) return;
+    const nearBottom = box.scrollHeight - box.scrollTop - box.clientHeight < 24;
+    if (nearBottom) box.scrollTop = box.scrollHeight;
+  }, [thinking?.text]);
 
   // live elapsed-seconds ticker so the pending state visibly moves even for models
   // that never emit reasoning (v4 flash, gpt-4o-mini, …)
@@ -375,7 +385,14 @@ export function CompanionScreen({ title, episode }: CompanionScreenProps) {
                   )}
                 </Box>
                 {showThinkingLive && thinking.text !== '' && (
-                  <Box background="surface.base" radius="s" padding="s" maxHeight={200} style={{ overflowY: 'auto' }}>
+                  <Box
+                    ref={thinkingBoxRef}
+                    background="surface.base"
+                    radius="s"
+                    padding="s"
+                    maxHeight={200}
+                    style={{ overflowY: 'auto' }}
+                  >
                     <Text size="caption" color="content.secondary" style={{ whiteSpace: 'pre-wrap' }}>
                       {thinking.text}
                     </Text>
